@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
-import { Button } from "@repo/ui/button";
+import { Button } from "@daap/ui/button";
 
 const API_HOST = process.env.NEXT_PUBLIC_API_HOST || "http://localhost:3001";
 
@@ -23,6 +23,8 @@ export default function Web() {
 
     try {
       const result = await fetch(`${API_HOST}/message/${name}`);
+
+      const results = Promise.all([])
       const response = await result.json();
       setResponse(response);
     } catch (err) {

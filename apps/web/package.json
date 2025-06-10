@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@daap/web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
     "next": "^14.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@repo/ui": "workspace:*"
+    "@daap/ui": "workspace:*"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^14.1.1",
@@ -20,8 +20,8 @@
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
     "eslint": "^8.57.0",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@daap/eslint-config": "workspace:*",
+    "@daap/typescript-config": "workspace:*",
     "typescript": "5.5.4"
   }
 }
