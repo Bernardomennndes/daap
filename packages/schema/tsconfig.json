@@ -1,0 +1,7 @@
+{
+  "extends": "@daap/typescript-config/base.json",
+  "compilerOptions": {
+    "strictPropertyInitialization": false, // Allow uninitialized properties to avoid errors on schema classes
+    "experimentalDecorators": true
+  }
+}
