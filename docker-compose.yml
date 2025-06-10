@@ -1,29 +1,118 @@
-version: "3"
+version: "3.8"
 
 services:
+  # Database
+  mongodb:
+    image: mongo:7
+    container_name: daap-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: daap
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app_network
+
+  # Cache Systems
+  redis:
+    image: redis:7-alpine
+    container_name: daap-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: daap-dragonfly
+    restart: always
+    ports:
+      - "6380:6379"
+    networks:
+      - app_network
+
+  # DAAP Services
+  reviews-service:
+    container_name: daap-reviews-service
+    build:
+      context: .
+      dockerfile: ./apps/reviews-service/Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://admin:admin@mongodb:27017/daap?authSource=admin
+      - CACHE_SERVICE_URL=http://cache-service:3002
+      - PORT=3001
+    depends_on:
+      - mongodb
+      - cache-service
+    networks:
+      - app_network
+
+  cache-service:
+    container_name: daap-cache-service
+    build:
+      context: .
+      dockerfile: ./apps/cache-service/Dockerfile
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - SEARCH_SERVICE_URL=http://search-service:3003
+      - CACHE_ADAPTER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DRAGONFLY_HOST=dragonfly
+      - DRAGONFLY_PORT=6379
+      - PORT=3002
+    depends_on:
+      - redis
+      - dragonfly
+      - search-service
+    networks:
+      - app_network
+
+  search-service:
+    container_name: daap-search-service
+    build:
+      context: .
+      dockerfile: ./apps/search-service/Dockerfile
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      - MONGO_URI=mongodb://admin:admin@mongodb:27017/daap?authSource=admin
+      - PORT=3003
+    depends_on:
+      - mongodb
+    networks:
+      - app_network
+
+  # Web Interface
   web:
-    container_name: web
+    container_name: daap-web
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
     restart: always
     ports:
-      - 3000:3000
-    networks:
-      - app_network
-  api:
-    container_name: api
-    build:
-      context: .
-      dockerfile: ./apps/api/Dockerfile
-    restart: always
-    ports:
-      - 3001:3001
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://reviews-service:3001
+    depends_on:
+      - reviews-service
     networks:
       - app_network
 
-# Define a network, which allows containers to communicate
-# with each other, by using their container name as a hostname
+volumes:
+  mongodb_data:
+
 networks:
   app_network:
-    external: true
+    driver: bridge
