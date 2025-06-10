@@ -12,14 +12,13 @@ export class RedisAdapter
 
   constructor(private config: CacheConfig) {
     super();
-    console.log('RedisAdapter: constructor called with config:', config);
+
     this.client = new Redis({
       host: config.host,
       port: config.port,
       password: config.password,
       db: config.db || 0,
     });
-    console.log('RedisAdapter: Redis client created');
   }
 
   async onModuleInit() {
@@ -31,12 +30,10 @@ export class RedisAdapter
   }
 
   async connect(): Promise<void> {
-    console.log('RedisAdapter: attempting to connect...');
     try {
       await this.client.ping();
-      console.log('RedisAdapter: connection successful');
     } catch (error) {
-      console.error('RedisAdapter: connection failed:', error);
+      console.error("RedisAdapter: connection failed:", error);
       throw error;
     }
   }

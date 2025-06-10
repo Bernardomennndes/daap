@@ -11,50 +11,30 @@ export class SearchService implements OnModuleInit {
     private readonly httpService: HttpService,
     private readonly cacheService: CacheService,
     private readonly secretsService: SecretsService
-  ) {
-    console.log("SearchService: constructor called");
-    console.log("SearchService: httpService is:", httpService);
-    console.log("SearchService: cacheService is:", cacheService);
-    console.log("SearchService: secretsService is:", secretsService);
-  }
+  ) {}
 
-  onModuleInit() {
-    console.log('SearchService: onModuleInit called');
-    console.log('SearchService: All dependencies initialized successfully');
-  }
+  onModuleInit() {}
 
   async search(
     query: string,
     page: number = 1,
     size: number = 10
   ): Promise<SearchResult> {
-    console.log(
-      `SearchService: searching for query="${query}", page=${page}, size=${size}`
-    );
-
     // Primeiro, verifica se existe no cache
     try {
-      console.log("SearchService: checking cache...");
       const cached = await this.cacheService.get(query, page, size);
       if (cached) {
-        console.log("SearchService: found in cache");
         return {
           ...cached,
           source: "cache",
         } as SearchResult;
       }
-      console.log(
-        "SearchService: not found in cache, fetching from search-service"
-      );
     } catch (cacheError) {
       console.error("SearchService: Cache error:", cacheError);
     }
 
     // Se não existe no cache, faz a requisição para o search-service
     try {
-      console.log(
-        `SearchService: calling search-service at ${this.secretsService.SEARCH_SERVICE_URL}/search`
-      );
       const response = await firstValueFrom(
         this.httpService.get(
           `${this.secretsService.SEARCH_SERVICE_URL}/search`,
@@ -73,7 +53,6 @@ export class SearchService implements OnModuleInit {
 
       // Armazena no cache para próximas consultas
       try {
-        console.log("SearchService: saving to cache...");
         await this.cacheService.set(
           query,
           page,
@@ -81,7 +60,6 @@ export class SearchService implements OnModuleInit {
           searchResult,
           this.secretsService.CACHE_TTL
         );
-        console.log("SearchService: saved to cache successfully");
       } catch (cacheError) {
         console.error("SearchService: Error saving to cache:", cacheError);
       }

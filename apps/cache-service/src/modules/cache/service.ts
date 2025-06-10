@@ -1,34 +1,32 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { CacheAdapter } from '../../lib/cache/adapter';
-import { SearchResult, CacheEntry } from '../../lib/cache/types';
+import { Injectable, OnModuleInit } from "@nestjs/common";
+import { CacheAdapter } from "../../lib/cache/adapter";
+import { SearchResult, CacheEntry } from "../../lib/cache/types";
 
 @Injectable()
 export class CacheService implements OnModuleInit {
-  constructor(private readonly cacheAdapter: CacheAdapter) {
-    console.log('CacheService: constructor called');
-    console.log('CacheService: cacheAdapter is:', cacheAdapter);
-  }
+  constructor(private readonly cacheAdapter: CacheAdapter) {}
 
-  onModuleInit() {
-    console.log('CacheService: onModuleInit called');
-    console.log('CacheService: cacheAdapter is working:', !!this.cacheAdapter);
-  }
+  onModuleInit() {}
 
   private generateCacheKey(query: string, page: number, size: number): string {
     return `search:${query}:${page}:${size}`;
   }
 
-  async get(query: string, page: number, size: number): Promise<SearchResult | null> {
+  async get(
+    query: string,
+    page: number,
+    size: number
+  ): Promise<SearchResult | null> {
     const key = this.generateCacheKey(query, page, size);
     const cached = await this.cacheAdapter.get(key);
-    
+
     if (!cached) {
       return null;
     }
 
     try {
       const entry: CacheEntry = JSON.parse(cached);
-      
+
       // Verifica se o cache não expirou
       if (Date.now() - entry.timestamp > entry.ttl * 1000) {
         await this.cacheAdapter.del(key);
@@ -44,10 +42,10 @@ export class CacheService implements OnModuleInit {
   }
 
   async set(
-    query: string, 
-    page: number, 
-    size: number, 
-    data: SearchResult, 
+    query: string,
+    page: number,
+    size: number,
+    data: SearchResult,
     ttl: number = 3600
   ): Promise<void> {
     const key = this.generateCacheKey(query, page, size);
