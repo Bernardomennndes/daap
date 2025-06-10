@@ -1,13 +1,70 @@
-# Turborepo Docker starter
+# DAAP - Microservices Architecture
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+A complete monorepo project implementing a microservices architecture for a review system with intelligent caching and search capabilities.
 
-## Using this example
+## Architecture Overview
 
-Run the following command:
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Web Frontend  │    │ Reviews Service │    │  Cache Service  │
+│    (Next.js)    │◄──►│    (NestJS)     │◄──►│    (NestJS)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                        │
+                                │                        ▼
+                                │              ┌─────────────────┐
+                                │              │ Search Service  │
+                                │              │    (NestJS)     │
+                                │              └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │    MongoDB      │    │  Redis/Dragonfly│
+                       │   (Database)    │    │     (Cache)     │
+                       └─────────────────┘    └─────────────────┘
+```
 
-```sh
-npx create-turbo@latest -e with-docker
+## Services
+
+### 🎯 Reviews Service (Port 3001)
+- **Purpose**: Main API for managing reviews
+- **Features**: CRUD operations, search integration
+- **Dependencies**: Cache Service for search operations
+
+### 🔄 Cache Service (Port 3002) 
+- **Purpose**: Intelligent caching middleware with abstraction layer
+- **Features**: Abstract cache adapter pattern (Redis/Dragonfly)
+- **Dependencies**: Search Service, Redis/Dragonfly
+
+### 🔍 Search Service (Port 3003)
+- **Purpose**: Full-text search with MongoDB
+- **Features**: MongoDB text search, Portuguese language support
+- **Dependencies**: MongoDB
+
+### 🌐 Web Frontend (Port 3000)
+- **Purpose**: User interface built with Next.js
+- **Dependencies**: Reviews Service
+
+## Quick Start
+
+### Development Mode
+```bash
+# Install dependencies
+npm install
+
+# Start all services
+npm run dev:services
+```
+
+### Docker Deployment
+```bash
+# Start all services with Docker
+npm run docker:up
+```
+
+## Testing
+```bash
+# Test all services integration
+npm run test:integration
 ```
 
 ## What's inside?
@@ -18,11 +75,11 @@ This Turborepo includes the following:
 
 - `web`: a [Next.js](https://nextjs.org/) app
 - `api`: an [Express](https://expressjs.com/) server
-- `@repo/ui`: a React component library
-- `@repo/logger`: Isomorphic logger (a small wrapper around console.log)
-- `@repo/eslint-config`: ESLint presets
-- `@repo/typescript-config`: tsconfig.json's used throughout the monorepo
-- `@repo/jest-presets`: Jest configurations
+- `@daap/ui`: a React component library
+- `@daap/logger`: Isomorphic logger (a small wrapper around console.log)
+- `@daap/eslint-config`: ESLint presets
+- `@daap/typescript-config`: tsconfig.json's used throughout the monorepo
+- `@daap/jest-presets`: Jest configurations
 
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
