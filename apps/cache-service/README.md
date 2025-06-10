@@ -28,7 +28,7 @@ CACHE_DB=0               # opcional
 CACHE_TTL=3600           # TTL padrão em segundos
 
 # Configuração do Search Service
-SEARCH_SERVICE_URL=http://localhost:3000
+SEARCH_SERVICE_URL=http://localhost:3001
 
 # Configuração da Aplicação
 PORT=3001
@@ -85,8 +85,8 @@ Para trocar do Redis para o Dragonfly:
 
 ```bash
 docker build -t cache-service .
-docker run -p 3001:3001 \
+docker run -p 3002:3002 \
   -e CACHE_HOST=redis \
-  -e SEARCH_SERVICE_URL=http://search-service:3000 \
+  -e SEARCH_SERVICE_URL=http://search-service:3003 \
   cache-service
 ```

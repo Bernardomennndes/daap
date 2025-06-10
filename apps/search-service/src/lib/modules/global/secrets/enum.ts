@@ -1,4 +1,4 @@
 export enum SearchAPIEnvironment {
-  PORT = 'SEARCH_API_PORT',
-  URL = 'SEARCH_API_URL',
+  PORT = 'SEARCH_SERVICE_PORT',
+  URL = 'SEARCH_SERVICE_URL',
 }

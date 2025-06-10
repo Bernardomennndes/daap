@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { LevelWithSilent } from 'pino';
 
 import { ISecretsService } from './adapter';
-import { AuthAPIEnvironment, MainAPIEnvironment } from './enum';
+import { AuthAPIEnvironment, MainAPIEnvironment, ReviewsAPIEnvironment } from './enum';
 
 @Injectable()
 export class SecretsService extends ConfigService implements ISecretsService {
@@ -29,6 +29,11 @@ export class SecretsService extends ConfigService implements ISecretsService {
     port: this.get<number>('MONGO_PORT'),
     user: this.get('MONGO_INITDB_ROOT_USERNAME'),
     pass: this.get('MONGO_INITDB_ROOT_PASSWORD'),
+  };
+
+  reviewsAPI = {
+    port: this.get<number>(ReviewsAPIEnvironment.PORT, 3001),
+    url: this.get(ReviewsAPIEnvironment.URL, 'http://0.0.0.0:3001'),
   };
 
   mainAPI = {

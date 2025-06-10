@@ -1,9 +1,13 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
+import { SecretsService } from './lib/modules/global/secrets/service';
 
 async function bootstrap() {
   const app = await NestFactory.create(MainModule);
-  await app.listen(process.env.PORT || 3003);
+  
+  const secretsService = app.get(SecretsService);
+  
+  await app.listen(secretsService.searchAPI.port);
 }
 bootstrap();

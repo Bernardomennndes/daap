@@ -15,5 +15,5 @@ export class SecretsService {
   get SEARCH_SERVICE_URL() { return this.configService.get('SEARCH_SERVICE_URL', 'http://localhost:3003'); }
   
   get ENV() { return this.configService.get('ENV', 'development'); }
-  get PORT() { return this.configService.get<number>('PORT', 3002); }
+  get PORT() { return this.configService.get<number>('CACHE_SERVICE_PORT', 3002); }
 }

@@ -1,4 +1,4 @@
-import { AuthAPIEnvironment, MainAPIEnvironment } from './enum';
+import { AuthAPIEnvironment, MainAPIEnvironment, ReviewsAPIEnvironment } from './enum';
 
 export abstract class ISecretsService {
   ENV: string;
@@ -18,6 +18,11 @@ export abstract class ISecretsService {
     port: number;
     user: string;
     pass: string;
+  };
+
+  reviewsAPI: {
+    port: ReviewsAPIEnvironment | number;
+    url: ReviewsAPIEnvironment | string;
   };
 
   mainAPI: {

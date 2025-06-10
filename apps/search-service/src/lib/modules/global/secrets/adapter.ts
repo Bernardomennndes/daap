@@ -1,3 +1,5 @@
+import { SearchAPIEnvironment } from './enum';
+
 export interface ISecretsService {
   MONGO_EXPRESS_URL: string;
   REDIS_COMMANDER_URL: string;
@@ -11,5 +13,9 @@ export interface ISecretsService {
     port: number;
     user: string;
     pass: string;
+  };
+  searchAPI: {
+    port: SearchAPIEnvironment | number;
+    url: SearchAPIEnvironment | string;
   };
 }

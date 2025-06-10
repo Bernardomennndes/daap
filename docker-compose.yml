@@ -48,7 +48,7 @@ services:
     environment:
       - MONGO_URI=mongodb://admin:admin@mongodb:27017/daap?authSource=admin
       - CACHE_SERVICE_URL=http://cache-service:3002
-      - PORT=3001
+      - REVIEWS_SERVICE_PORT=3001
     depends_on:
       - mongodb
       - cache-service
@@ -70,7 +70,7 @@ services:
       - REDIS_PORT=6379
       - DRAGONFLY_HOST=dragonfly
       - DRAGONFLY_PORT=6379
-      - PORT=3002
+      - CACHE_SERVICE_PORT=3002
     depends_on:
       - redis
       - dragonfly
@@ -88,7 +88,7 @@ services:
       - "3003:3003"
     environment:
       - MONGO_URI=mongodb://admin:admin@mongodb:27017/daap?authSource=admin
-      - PORT=3003
+      - SEARCH_SERVICE_PORT=3003
     depends_on:
       - mongodb
     networks:

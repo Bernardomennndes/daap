@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { MainModule } from "./main.module";
+import { SecretsService } from "./lib/modules/global/secrets/service";
 
 async function bootstrap() {
   try {
@@ -8,7 +9,9 @@ async function bootstrap() {
       logger: ["error", "warn", "log", "verbose", "debug"],
     });
 
-    await app.listen(process.env.PORT || 3002);
+    const secretsService = app.get(SecretsService);
+
+    await app.listen(secretsService.PORT);
   } catch (error) {
     console.error("Failed to start Cache Service:", error);
     process.exit(1);
