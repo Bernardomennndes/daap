@@ -1,3 +1,3 @@
 // Schemas related to reviews
 
-export { Reviews, ReviewSchema } from './review.schema';
+export { Review, ReviewSchema, type ReviewDocument } from "./review.schema";

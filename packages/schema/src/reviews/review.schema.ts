@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
 
 @Schema({ collection: "reviews" })
-export class Reviews {
+export class Review {
   @Prop()
   reviewerID: string;
 
@@ -37,5 +37,22 @@ export class Reviews {
   class: number;
 }
 
-export type ReviewDocument = Reviews & Document;
-export const ReviewSchema = SchemaFactory.createForClass(Reviews);
+export type ReviewDocument = Review & Document;
+export const ReviewSchema = SchemaFactory.createForClass(Review);
+
+// Create text index for full-text search
+// ReviewSchema.index(
+//   { reviewText: "text", summary: "text" },
+//   { default_language: "english" }
+// );
+
+// Add a compound index for performance optimization
+// ReviewSchema.index(
+//   { reviewerID: 1, asin: 1 },
+//   { unique: true, background: true }
+// );
+// Add a TTL index for automatic deletion of old reviews
+// ReviewSchema.index(
+//   { unixReviewTime: 1 },
+//   { expireAfterSeconds: 31536000 } // 1 year
+// );
