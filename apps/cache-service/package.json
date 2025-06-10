@@ -1,0 +1,46 @@
+{
+  "name": "@daap/cache-service",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/main.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "nest build",
+    "clean": "rm -rf dist",
+    "dev": "nodemon --exec \"node -r esbuild-register ./src/main.ts\" -e .ts",
+    "lint": "tsc --noEmit && eslint \"src/**/*.ts*\" --max-warnings 0",
+    "start": "node dist/main.js",
+    "test": "jest --detectOpenHandles",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js"
+  },
+  "jest": {
+    "preset": "@daap/jest-presets/node"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/axios": "^3.0.0",
+    "@daap/schema": "workspace:*",
+    "@daap/logger": "workspace:*",
+    "axios": "^1.8.4",
+    "redis": "^5.1.0",
+    "ioredis": "^5.3.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@daap/eslint-config": "workspace:*",
+    "@daap/jest-presets": "workspace:*",
+    "@daap/typescript-config": "workspace:*",
+    "@types/node": "^20.11.24",
+    "eslint": "^8.57.0",
+    "typescript": "5.5.4",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "esbuild-register": "^3.5.0",
+    "nodemon": "^3.0.0",
+    "jest": "^29.7.0"
+  }
+}

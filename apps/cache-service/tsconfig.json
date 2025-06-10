@@ -1,0 +1,14 @@
+{
+  "extends": "@daap/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": "./src",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*.ts"]
+}
