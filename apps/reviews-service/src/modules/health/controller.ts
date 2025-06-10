@@ -1,9 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get } from "@nestjs/common";
 
-@Controller('health')
+@Controller("health")
 export class HealthController {
   @Get()
   health() {
-    return { status: 'ok', service: 'reviews-service' };
+    return {
+      status: "ok",
+      service: "reviews-service",
+      timestamp: new Date().toISOString(),
+    };
   }
 }
