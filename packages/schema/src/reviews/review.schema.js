@@ -6,9 +6,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReviewSchema = exports.Reviews = void 0;
+exports.ReviewSchema = exports.Review = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
-let Reviews = class Reviews {
+let Review = class Review {
     reviewerID;
     asin;
     reviewerName;
@@ -21,41 +21,56 @@ let Reviews = class Reviews {
     category;
     class;
 };
-exports.Reviews = Reviews;
+exports.Review = Review;
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "reviewerID", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "reviewerID", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "asin", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "asin", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "reviewerName", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "reviewerName", void 0);
 __decorate([
-    (0, mongoose_1.Prop)([Number])
-], Reviews.prototype, "helpful", void 0);
+    (0, mongoose_1.Prop)({ type: [Number] })
+], Review.prototype, "helpful", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "reviewText", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "reviewText", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "overall", void 0);
+    (0, mongoose_1.Prop)({ type: Number })
+], Review.prototype, "overall", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "summary", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "summary", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "unixReviewTime", void 0);
+    (0, mongoose_1.Prop)({ type: Number })
+], Review.prototype, "unixReviewTime", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "reviewTime", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "reviewTime", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "category", void 0);
+    (0, mongoose_1.Prop)({ type: String })
+], Review.prototype, "category", void 0);
 __decorate([
-    (0, mongoose_1.Prop)()
-], Reviews.prototype, "class", void 0);
-exports.Reviews = Reviews = __decorate([
+    (0, mongoose_1.Prop)({ type: Number })
+], Review.prototype, "class", void 0);
+exports.Review = Review = __decorate([
     (0, mongoose_1.Schema)({ collection: "reviews" })
-], Reviews);
-exports.ReviewSchema = mongoose_1.SchemaFactory.createForClass(Reviews);
+], Review);
+exports.ReviewSchema = mongoose_1.SchemaFactory.createForClass(Review);
+// Create text index for full-text search
+// ReviewSchema.index(
+//   { reviewText: "text", summary: "text" },
+//   { default_language: "english" }
+// );
+// Add a compound index for performance optimization
+// ReviewSchema.index(
+//   { reviewerID: 1, asin: 1 },
+//   { unique: true, background: true }
+// );
+// Add a TTL index for automatic deletion of old reviews
+// ReviewSchema.index(
+//   { unixReviewTime: 1 },
+//   { expireAfterSeconds: 31536000 } // 1 year
+// );

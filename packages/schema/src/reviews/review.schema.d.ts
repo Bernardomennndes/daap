@@ -1,5 +1,5 @@
 import { Document } from "mongoose";
-export declare class Reviews {
+export declare class Review {
     reviewerID: string;
     asin: string;
     reviewerName: string;
@@ -12,12 +12,12 @@ export declare class Reviews {
     category: string;
     class: number;
 }
-export type ReviewDocument = Reviews & Document;
-export declare const ReviewSchema: import("mongoose").Schema<Reviews, import("mongoose").Model<Reviews, any, any, any, Document<unknown, any, Reviews> & Reviews & {
+export type ReviewDocument = Review & Document;
+export declare const ReviewSchema: import("mongoose").Schema<Review, import("mongoose").Model<Review, any, any, any, Document<unknown, any, Review> & Review & {
     _id: import("mongoose").Types.ObjectId;
 } & {
     __v: number;
-}, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, Reviews, Document<unknown, {}, import("mongoose").FlatRecord<Reviews>> & import("mongoose").FlatRecord<Reviews> & {
+}, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, Review, Document<unknown, {}, import("mongoose").FlatRecord<Review>> & import("mongoose").FlatRecord<Review> & {
     _id: import("mongoose").Types.ObjectId;
 } & {
     __v: number;

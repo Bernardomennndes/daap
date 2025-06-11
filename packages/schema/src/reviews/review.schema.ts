@@ -3,37 +3,37 @@ import { Document } from "mongoose";
 
 @Schema({ collection: "reviews" })
 export class Review {
-  @Prop()
+  @Prop({ type: String })
   reviewerID: string;
 
-  @Prop()
+  @Prop({ type: String })
   asin: string;
 
-  @Prop()
+  @Prop({ type: String })
   reviewerName: string;
 
-  @Prop([Number])
+  @Prop({ type: [Number] })
   helpful: number[];
 
-  @Prop()
+  @Prop({ type: String })
   reviewText: string;
 
-  @Prop()
+  @Prop({ type: Number })
   overall: number;
 
-  @Prop()
+  @Prop({ type: String })
   summary: string;
 
-  @Prop()
+  @Prop({ type: Number })
   unixReviewTime: number;
 
-  @Prop()
+  @Prop({ type: String })
   reviewTime: string;
 
-  @Prop()
+  @Prop({ type: String })
   category: string;
 
-  @Prop()
+  @Prop({ type: Number })
   class: number;
 }
 
