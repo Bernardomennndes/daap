@@ -48,7 +48,7 @@ export class SearchService implements OnModuleInit {
         ...response.data,
         page,
         size,
-        source: "search-service",
+        source: "search",
       };
 
       // Armazena no cache para próximas consultas
