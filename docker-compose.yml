@@ -65,7 +65,6 @@ services:
       - CACHE_SERVICE_URL=${CACHE_SERVICE_URL}
       - REVIEWS_SERVICE_PORT=${REVIEWS_SERVICE_PORT:-3001}
       - REDIS_URL=${REDIS_URL}
-      - INSTANCE_ID=$${HOSTNAME}
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
