@@ -7,7 +7,9 @@ export class HealthController {
     return {
       status: "ok",
       service: "reviews-service",
+      instance: process.env.INSTANCE_ID || process.env.HOSTNAME || "unknown",
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
     };
   }
 }

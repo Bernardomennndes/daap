@@ -67,7 +67,7 @@
     "nodemon": "^3.1.0",
     "supertest": "^6.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "5.5.4"
+    "typescript": "~5.4.0"
   },
   "main": "dist/src/main"
 }

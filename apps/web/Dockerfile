@@ -9,9 +9,9 @@ RUN apk update
 RUN apk add --no-cache libc6-compat
 # Set working directory
 WORKDIR /app
-RUN yarn global add turbo
+RUN npm install -g pnpm turbo
 COPY . .
-RUN turbo prune web --docker
+RUN turbo prune @daap/web --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
@@ -19,9 +19,12 @@ RUN apk update
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install pnpm and turbo
+RUN npm install -g pnpm turbo
+
 # First install the dependencies (as they change less often)
 COPY --from=builder /app/out/json/ .
-RUN yarn install
+RUN pnpm install
 
 # Build the project
 COPY --from=builder /app/out/full/ .
@@ -33,7 +36,7 @@ COPY --from=builder /app/out/full/ .
 # ARG TURBO_TOKEN
 # ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN yarn turbo build
+RUN pnpm turbo build
 
 FROM base AS runner
 WORKDIR /app
@@ -49,4 +52,4 @@ COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=installer --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
-CMD node apps/web/server.js
+CMD ["node", "apps/web/server.js"]

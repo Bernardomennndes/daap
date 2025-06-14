@@ -36,7 +36,7 @@
     "@daap/typescript-config": "workspace:*",
     "@types/node": "^20.11.24",
     "eslint": "^8.57.0",
-    "typescript": "5.5.4",
+    "typescript": "~5.4.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "esbuild-register": "^3.5.0",

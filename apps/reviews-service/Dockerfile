@@ -9,9 +9,9 @@ RUN apk update
 RUN apk add --no-cache libc6-compat
 # Set working directory
 WORKDIR /app
-RUN yarn global add turbo
+RUN npm install -g pnpm turbo
 COPY . .
-RUN turbo prune api --docker
+RUN turbo prune @daap/reviews-service --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
@@ -19,9 +19,12 @@ RUN apk update
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install pnpm and turbo
+RUN npm install -g pnpm turbo
+
 # First install dependencies (as they change less often)
 COPY --from=builder /app/out/json/ .
-RUN yarn install
+RUN pnpm install
 
 # Build the project and its dependencies
 COPY --from=builder /app/out/full/ .
@@ -33,7 +36,7 @@ COPY --from=builder /app/out/full/ .
 # ARG TURBO_TOKEN
 # ENV TURBO_TOKEN=$TURBO_TOKEN
 
-RUN yarn turbo build
+RUN pnpm turbo build
 
 FROM base AS runner
 WORKDIR /app
@@ -44,4 +47,4 @@ RUN adduser --system --uid 1001 expressjs
 USER expressjs
 COPY --from=installer /app .
 
-CMD node apps/api/dist/index.js
+CMD ["node", "apps/reviews-service/dist/src/main.js"]
