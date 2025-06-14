@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Mudar para o diretório do projeto (um nível acima do diretório scripts)
+cd "$(dirname "$0")/.."
+
 INSTANCES=${1:-3}
 SERVICE=${2:-reviews-service}
 

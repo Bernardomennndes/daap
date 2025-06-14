@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Mudar para o diretório do projeto (um nível acima do diretório scripts)
+cd "$(dirname "$0")/.."
+
 # Configurações padrão
 DEFAULT_INSTANCES=3
 INSTANCES=${1:-$DEFAULT_INSTANCES}

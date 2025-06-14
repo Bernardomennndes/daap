@@ -141,20 +141,28 @@ sudo sh -c 'cat hosts-local.txt >> /etc/hosts'
 
 ### 4. Deploy com Load Balancing
 ```bash
-# Deploy com 3 instâncias (padrão)
-./deploy.sh
+# Deploy com 3 instâncias (padrão) - usando o script principal
+./daap.sh deploy
 
 # Deploy com N instâncias específicas
-./deploy.sh 5
+./daap.sh deploy 5
+
+# Ou usando os scripts diretamente
+./scripts/deploy.sh
+./scripts/deploy.sh 5
 ```
 
 ### 5. Monitorar Sistema
 ```bash
 # Ver status de todos os serviços
-./monitor.sh
+./daap.sh monitor
 
 # Ver logs em tempo real
-./logs.sh reviews
+./daap.sh logs reviews
+
+# Ou usando os scripts diretamente
+./scripts/monitor.sh
+./scripts/logs.sh reviews
 ```
 
 ## 🛠️ Scripts de Gerenciamento Avançados
@@ -167,46 +175,77 @@ sudo sh -c 'cat hosts-local.txt >> /etc/hosts'
 
 ### 2. Deploy com Load Balancing
 ```bash
-# Deploy com 3 instâncias (padrão)
-./deploy.sh
+# Deploy com 3 instâncias (padrão) - usando o script principal
+./daap.sh deploy
 
 # Deploy com N instâncias específicas
-./deploy.sh 5
+./daap.sh deploy 5
+
+# Ou usando os scripts diretamente
+./scripts/deploy.sh
+./scripts/deploy.sh 5
 ```
 
 ## 🎯 Scripts de Gerenciamento
 
-### Deploy e Escalonamento
+### Script Principal (Recomendado)
 ```bash
+# Ver todos os comandos disponíveis
+./daap.sh help
+
+# Verificar pré-requisitos
+./daap.sh check
+
+# Validar configuração
+./daap.sh validate
+
 # Deploy inicial
-./deploy.sh [número_de_instâncias]
+./daap.sh deploy [número_de_instâncias]
 
 # Escalar dinamicamente
-./scale.sh [número_de_instâncias] [serviço]
+./daap.sh scale [número_de_instâncias]
 
 # Monitorar status
-./monitor.sh
+./daap.sh monitor
 
 # Ver logs
-./logs.sh [serviço] [linhas]
+./daap.sh logs [serviço]
 
 # Teste de carga
-./load-test.sh [requisições] [concorrência] [url]
+./daap.sh test [requisições] [concorrência] [url]
+```
+
+### Scripts Individuais (Alternativa)
+```bash
+# Deploy inicial
+./scripts/deploy.sh [número_de_instâncias]
+
+# Escalar dinamicamente
+./scripts/scale.sh [número_de_instâncias] [serviço]
+
+# Monitorar status
+./scripts/monitor.sh
+
+# Ver logs
+./scripts/logs.sh [serviço] [linhas]
+
+# Teste de carga
+./scripts/load-test.sh [requisições] [concorrência] [url]
 ```
 
 ### Exemplos Práticos
 ```bash
 # Deploy com 5 instâncias do reviews-service
-./deploy.sh 5
+./daap.sh deploy 5
 
 # Escalar para 8 instâncias
-./scale.sh 8
+./daap.sh scale 8
 
 # Ver logs em tempo real
-./logs.sh reviews
+./daap.sh logs reviews
 
 # Teste de carga com 100 requisições
-./load-test.sh 100 10 http://reviews.localhost/health
+./daap.sh test 100 10 http://reviews.localhost/health
 ```
 
 ## 🌐 Endpoints Disponíveis
