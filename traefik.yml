@@ -1,0 +1,35 @@
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: your-email@domain.com
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# Configurações de logging
+log:
+  level: INFO
+
+accessLog: {}
+
+# Configurações de métricas
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true

@@ -17,10 +17,10 @@
     "test": "turbo run test",
     "test:integration": "node scripts/test-integration.js"
   },
-  "dependencies": {},
   "devDependencies": {
     "prettier": "^3.2.5",
-    "turbo": "^2.4.4"
+    "turbo": "^2.4.4",
+    "typescript": "~5.4.0"
   },
   "engines": {
     "node": ">=14.0.0",

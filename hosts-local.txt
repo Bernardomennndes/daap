@@ -1,0 +1,10 @@
+# DAAP Local Development Hosts
+# Adicione estas entradas ao seu /etc/hosts para desenvolvimento local
+# Execute: sudo vim /etc/hosts
+# Ou: echo "$(cat hosts-local.txt)" | sudo tee -a /etc/hosts
+
+127.0.0.1 daap.localhost
+127.0.0.1 reviews.localhost
+127.0.0.1 cache.localhost
+127.0.0.1 search.localhost
+127.0.0.1 traefik.localhost
