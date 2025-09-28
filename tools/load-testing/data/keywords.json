@@ -1,0 +1,102 @@
+{
+  "categories": {
+    "quality": {
+      "positive": [
+        "excellent", "amazing", "outstanding", "superb", "fantastic", "wonderful", 
+        "brilliant", "perfect", "exceptional", "great", "good", "nice", "solid",
+        "reliable", "durable", "premium", "high-quality", "well-made", "sturdy",
+        "impressive", "flawless", "top-notch", "first-class", "superior"
+      ],
+      "negative": [
+        "terrible", "awful", "horrible", "poor", "bad", "disappointing", "cheap",
+        "flimsy", "broken", "defective", "faulty", "damaged", "useless", "junk",
+        "garbage", "waste", "inferior", "low-quality", "subpar", "mediocre"
+      ]
+    },
+    "experience": {
+      "positive": [
+        "smooth", "easy", "simple", "convenient", "comfortable", "enjoyable",
+        "pleasant", "satisfying", "delightful", "seamless", "effortless",
+        "user-friendly", "intuitive", "responsive", "fast", "quick"
+      ],
+      "negative": [
+        "difficult", "complicated", "confusing", "frustrating", "annoying",
+        "slow", "laggy", "unresponsive", "buggy", "glitchy", "crash",
+        "freeze", "problem", "issue", "trouble", "hassle"
+      ]
+    },
+    "service": {
+      "positive": [
+        "helpful", "friendly", "professional", "courteous", "polite", "kind",
+        "responsive", "prompt", "efficient", "knowledgeable", "supportive",
+        "excellent service", "great support", "customer care"
+      ],
+      "negative": [
+        "rude", "unhelpful", "unprofessional", "slow response", "poor service",
+        "bad support", "ignored", "dismissed", "arrogant", "incompetent"
+      ]
+    },
+    "value": {
+      "positive": [
+        "worth it", "value for money", "affordable", "reasonable", "cheap",
+        "bargain", "deal", "cost-effective", "budget-friendly", "economical"
+      ],
+      "negative": [
+        "expensive", "overpriced", "costly", "not worth it", "rip-off",
+        "waste of money", "too expensive", "pricey", "overrated"
+      ]
+    },
+    "features": [
+      "battery life", "screen", "camera", "performance", "speed", "memory",
+      "storage", "design", "build quality", "display", "sound", "audio",
+      "video", "graphics", "processor", "CPU", "GPU", "connectivity",
+      "wifi", "bluetooth", "USB", "charging", "power", "size", "weight",
+      "portability", "durability", "waterproof", "wireless", "app", "software",
+      "interface", "menu", "settings", "customization", "compatibility"
+    ],
+    "products": [
+      "phone", "laptop", "tablet", "headphones", "speaker", "watch", "camera",
+      "TV", "monitor", "keyboard", "mouse", "charger", "case", "cover",
+      "screen protector", "cable", "adapter", "smartphone", "computer",
+      "device", "gadget", "electronics", "accessory", "product", "item"
+    ],
+    "brands": [
+      "Apple", "Samsung", "Google", "Microsoft", "Sony", "LG", "Huawei",
+      "OnePlus", "Xiaomi", "Nokia", "Motorola", "HTC", "Asus", "Acer",
+      "Dell", "HP", "Lenovo", "Amazon", "Netflix", "Spotify", "YouTube"
+    ],
+    "emotions": [
+      "love", "hate", "like", "dislike", "enjoy", "disappointed", "satisfied",
+      "happy", "sad", "angry", "frustrated", "excited", "pleased", "annoyed",
+      "impressed", "surprised", "shocked", "amazed", "confused", "worried"
+    ],
+    "time_expressions": [
+      "quickly", "slowly", "immediately", "instantly", "eventually", "finally",
+      "soon", "later", "after", "before", "during", "while", "when", "since",
+      "always", "never", "sometimes", "often", "rarely", "frequently"
+    ],
+    "comparisons": [
+      "better than", "worse than", "similar to", "compared to", "versus",
+      "alternative", "replacement", "upgrade", "downgrade", "improvement",
+      "best", "worst", "average", "mediocre", "standard", "premium"
+    ]
+  },
+  "common_phrases": [
+    "highly recommend", "would recommend", "don't recommend", "waste of money",
+    "worth every penny", "great value", "poor quality", "excellent quality",
+    "easy to use", "hard to use", "works perfectly", "doesn't work",
+    "as advertised", "not as described", "exceeds expectations", "falls short",
+    "love this product", "hate this product", "regret buying", "glad I bought",
+    "perfect for", "not suitable for", "works great", "broken out of box",
+    "fast delivery", "slow shipping", "great packaging", "poor packaging",
+    "customer service", "return policy", "money back", "refund",
+    "five stars", "one star", "highly rated", "poorly rated"
+  ],
+  "technical_terms": [
+    "functionality", "usability", "reliability", "compatibility", "efficiency",
+    "optimization", "integration", "configuration", "installation", "setup",
+    "update", "upgrade", "downgrade", "backup", "restore", "sync", "connection",
+    "network", "bandwidth", "latency", "response time", "loading time",
+    "crash", "bug", "glitch", "error", "issue", "problem", "solution", "fix"
+  ]
+}
