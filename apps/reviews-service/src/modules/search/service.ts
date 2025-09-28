@@ -23,13 +23,32 @@ export class SearchService {
       const cacheServiceUrl = this.configService.get('CACHE_SERVICE_URL', 'http://localhost:3002');
       const response = await firstValueFrom(
         this.httpService.get(`${cacheServiceUrl}/search`, {
-          params: { q: query, page, size }
+          params: { q: query, page, size },
+          timeout: 60000
         })
       );
 
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to search: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn('Cache service failed, falling back to search service directly:', error.message);
+      
+      // Fallback to search service directly
+      try {
+        const searchServiceUrl = this.configService.get('SEARCH_SERVICE_URL', 'http://search-service:3003');
+        const response = await firstValueFrom(
+          this.httpService.get(`${searchServiceUrl}/search`, {
+            params: { q: query, page, size },
+            timeout: 60000
+          })
+        );
+
+        return {
+          ...response.data,
+          source: 'search-direct'
+        };
+      } catch (searchError) {
+        throw new Error(`Both cache and search services failed: ${searchError instanceof Error ? searchError.message : 'Unknown error'}`);
+      }
     }
   }
 

@@ -8,7 +8,7 @@ import { SecretsService } from './secrets/service';
   imports: [
     ConfigModule,
     HttpModule.register({
-      timeout: 5000,
+      timeout: 60000,
       maxRedirects: 5,
     }),
   ],

@@ -35,13 +35,20 @@ export class SearchService implements OnModuleInit {
 
     // Se não existe no cache, faz a requisição para o search-service
     try {
+      console.log(`Making request to search service: ${this.secretsService.SEARCH_SERVICE_URL}/search`);
+      
       const response = await firstValueFrom(
         this.httpService.get(
           `${this.secretsService.SEARCH_SERVICE_URL}/search`,
           {
             params: { q: query, page, size },
+            timeout: 60000,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
           }
-        )
+        ).pipe()
       );
 
       const searchResult: SearchResult = {

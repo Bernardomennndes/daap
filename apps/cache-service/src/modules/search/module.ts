@@ -8,7 +8,7 @@ import { SearchController } from './controller';
   imports: [
     CacheModuleDomain,
     HttpModule.register({
-      timeout: 5000,
+      timeout: 60000,
       maxRedirects: 5,
     }),
   ],
