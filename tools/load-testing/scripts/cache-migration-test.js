@@ -14,6 +14,7 @@
  */
 
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const { exec, spawn } = require('child_process');
 const https = require('https');
@@ -321,19 +322,30 @@ class CacheMigrationTest {
 
           // Obter valor da chave do Dragonfly
           const getResult = await this.execCommand(`redis-cli -h ${this.dragonflyHost} -p ${this.dragonflyPort} GET "${key}"`);
-          const value = getResult.stdout;
+          const value = getResult.stdout.trim();
 
           if (value && value !== '(nil)') {
-            // Salvar no Redis
-            let setCmd;
-            if (ttl > 0) {
-              setCmd = `redis-cli -h ${this.redisHost} -p ${this.redisPort} SETEX "${key}" ${ttl} "${value}"`;
-            } else {
-              setCmd = `redis-cli -h ${this.redisHost} -p ${this.redisPort} SET "${key}" "${value}"`;
-            }
+            // Criar arquivo temporário de forma segura
+            const tempFile = `/tmp/redis_migration_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.txt`;
+            
+            try {
+              // Escrever valor no arquivo usando Node.js (evita problemas com shell)
+              await fsPromises.writeFile(tempFile, value, 'utf8');
+              
+              // Migrar usando redis-cli com arquivo
+              let setCmd;
+              if (ttl > 0) {
+                setCmd = `redis-cli -h ${this.redisHost} -p ${this.redisPort} -x SETEX "${key}" ${ttl} < "${tempFile}"`;
+              } else {
+                setCmd = `redis-cli -h ${this.redisHost} -p ${this.redisPort} -x SET "${key}" < "${tempFile}"`;
+              }
 
-            await this.execCommand(setCmd);
-            migratedCount++;
+              await this.execCommand(setCmd);
+              migratedCount++;
+            } finally {
+              // Limpar arquivo temporário
+              await fsPromises.unlink(tempFile).catch(() => {});
+            }
           }
         } catch (error) {
           errorCount++;
