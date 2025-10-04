@@ -34,3 +34,7 @@ yarn-error.log*
 
 # turbo
 .turbo
+
+# data
+tools/load-testing/data/queries-*.json
+tools/load-testing/results/cache-test-*.json
