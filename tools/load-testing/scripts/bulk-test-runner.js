@@ -9,8 +9,8 @@
  * 3. Migra dados do Redis para o Dragonfly
  * 4. Mostra progresso em tempo real
  *
- * Uso: node cache-migration.js <queries> <concorrencia>
- * Exemplo: node cache-migration.js 1000 10
+ * Uso: node bulk-test-runner.js <queries> <concorrencia>
+ * Exemplo: node bulk-test-runner.js 1000 10
  */
 
 const fs = require("fs");
@@ -20,7 +20,7 @@ const { exec, spawn } = require("child_process");
 const https = require("https");
 const http = require("http");
 
-class CacheMigrationTest {
+class BulkTestRunner {
   constructor(queryCount, concurrency) {
     this.queryCount = parseInt(queryCount) || 100;
     this.concurrency = parseInt(concurrency) || 5;
@@ -143,7 +143,7 @@ class CacheMigrationTest {
         method: "GET",
         headers: {
           Host: this.reviewsHost,
-          "User-Agent": "Cache-Migration-Test/1.0",
+          "User-Agent": "bulk-test-runner/1.0",
         },
         timeout: 30000,
       };
@@ -497,8 +497,8 @@ class CacheMigrationTest {
 
 // Verificar argumentos da linha de comando
 if (process.argv.length < 4) {
-  console.log("\nUso: node cache-migration-test.js <queries> <concorrencia>");
-  console.log("Exemplo: node cache-migration-test.js 1000 10\n");
+  console.log("\nUso: node bulk-test-runner.js <queries> <concorrencia>");
+  console.log("Exemplo: node bulk-test-runner.js 1000 10\n");
   console.log("Parâmetros:");
   console.log("  queries      - Número total de queries a executar");
   console.log("  concorrencia - Número de queries simultâneas\n");
@@ -506,5 +506,5 @@ if (process.argv.length < 4) {
 }
 
 const [, , queryCount, concurrency] = process.argv;
-const test = new CacheMigrationTest(queryCount, concurrency);
+const test = new BulkTestRunner(queryCount, concurrency);
 test.run().catch(console.error);

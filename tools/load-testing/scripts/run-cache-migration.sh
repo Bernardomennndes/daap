@@ -3,7 +3,7 @@
 # Cache Migration Test Script Wrapper
 # 
 # Este script facilita a execução do teste de migração de cache
-# Uso: ./run-cache-migration.sh [queries] [concorrencia]
+# Uso: ./run-bulk-test-runner.sh [queries] [concorrencia]
 
 # Cores para output
 RED='\033[0;31m'
@@ -113,7 +113,7 @@ log "INFO" "Iniciando teste de migração de cache..."
 echo ""
 
 cd "$SCRIPT_DIR"
-node cache-migration.js "$QUERIES" "$CONCURRENCY"
+node bulk-test-runner.js "$QUERIES" "$CONCURRENCY"
 
 RESULT=$?
 
