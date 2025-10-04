@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Cache Migration Test Script
+ * Cache Migration Script
  * 
  * Este script executa as seguintes funções:
  * 1. Verifica/cria arquivos de queries com a quantidade especificada
@@ -9,8 +9,8 @@
  * 3. Migra dados do Redis para o Dragonfly
  * 4. Mostra progresso em tempo real
  * 
- * Uso: node cache-migration-test.js <queries> <concorrencia>
- * Exemplo: node cache-migration-test.js 1000 10
+ * Uso: node cache-migration.js <queries> <concorrencia>
+ * Exemplo: node cache-migration.js 1000 10
  */
 
 const fs = require('fs');

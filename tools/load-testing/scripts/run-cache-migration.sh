@@ -113,7 +113,7 @@ log "INFO" "Iniciando teste de migração de cache..."
 echo ""
 
 cd "$SCRIPT_DIR"
-node cache-migration-test.js "$QUERIES" "$CONCURRENCY"
+node cache-migration.js "$QUERIES" "$CONCURRENCY"
 
 RESULT=$?
 
