@@ -1,0 +1,3 @@
+{
+  "extends": "@daap/typescript-config/base.json"
+}

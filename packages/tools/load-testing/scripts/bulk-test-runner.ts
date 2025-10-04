@@ -13,15 +13,39 @@
  * Exemplo: node bulk-test-runner.js 1000 10
  */
 
-const fs = require("fs");
-const fsPromises = require("fs").promises;
-const path = require("path");
-const { exec, spawn } = require("child_process");
-const https = require("https");
-const http = require("http");
+import fs from "fs";
+import path from "path";
+import http from "http";
+
+import { Logger } from "../utils/logger";
+import { CLI } from "../utils/cli";
+import { CacheController } from "./cache-controller";
 
 class BulkTestRunner {
-  constructor(queryCount, concurrency) {
+  cli: CLI;
+  logger: Logger;
+  cacheController: CacheController;
+
+  queryCount: number;
+  concurrency: number;
+  dataDir: string;
+  resultsDir: string;
+  queryFile: string;
+  baseUrl: string;
+  reviewsHost: string;
+  completedQueries: number;
+  totalQueries: number;
+  errors: number;
+
+  queries: string[] = [];
+
+  constructor(
+    queryCount: string,
+    concurrency: string,
+    logger: Logger,
+    cli: CLI,
+    cacheController: CacheController
+  ) {
     this.queryCount = parseInt(queryCount) || 100;
     this.concurrency = parseInt(concurrency) || 5;
     this.dataDir = path.join(__dirname, "../data");
@@ -37,13 +61,11 @@ class BulkTestRunner {
     this.totalQueries = 0;
     this.errors = 0;
 
-    // Dragonfly (origem) e Redis (destino) configs
-    this.dragonflyHost = "localhost";
-    this.dragonflyPort = 6380; // Cache principal (origem)
-    this.redisHost = "localhost";
-    this.redisPort = 6379; // Destino da migração
-
     this.ensureDirs();
+
+    this.cli = cli;
+    this.logger = logger;
+    this.cacheController = cacheController;
   }
 
   ensureDirs() {
@@ -52,57 +74,27 @@ class BulkTestRunner {
     }
   }
 
-  log(level, message) {
-    const timestamp = new Date()
-      .toISOString()
-      .replace("T", " ")
-      .replace(/\..+/, "");
-    const colors = {
-      INFO: "\x1b[36m", // Cyan
-      WARN: "\x1b[33m", // Yellow
-      ERROR: "\x1b[31m", // Red
-      SUCCESS: "\x1b[32m", // Green
-      PROGRESS: "\x1b[35m", // Magenta
-    };
-    const color = colors[level] || "\x1b[0m";
-    console.log(
-      `${color}[${timestamp}] [${level.padEnd(8)}]\x1b[0m ${message}`
-    );
-  }
-
-  async execCommand(command, options = {}) {
-    return new Promise((resolve, reject) => {
-      exec(command, options, (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve({ stdout: stdout.trim(), stderr: stderr.trim() });
-        }
-      });
-    });
-  }
-
   async checkQueryFile() {
-    this.log(
+    this.logger.log(
       "INFO",
       `Verificando arquivo de queries: queries-${this.queryCount}.json`
     );
 
     if (fs.existsSync(this.queryFile)) {
-      this.log("SUCCESS", "Arquivo de queries encontrado");
+      this.logger.log("SUCCESS", "Arquivo de queries encontrado");
       return true;
     }
 
-    this.log("WARN", "Arquivo de queries não encontrado. Gerando...");
+    this.logger.log("WARN", "Arquivo de queries não encontrado. Gerando...");
 
     try {
       const generatorPath = path.join(__dirname, "query-generator.js");
       const command = `node "${generatorPath}" ${this.queryCount}`;
 
-      await this.execCommand(command);
+      await this.cli.execCommand(command);
 
       if (fs.existsSync(this.queryFile)) {
-        this.log(
+        this.logger.log(
           "SUCCESS",
           `Arquivo queries-${this.queryCount}.json gerado com sucesso`
         );
@@ -111,7 +103,10 @@ class BulkTestRunner {
         throw new Error("Falha ao gerar arquivo de queries");
       }
     } catch (error) {
-      this.log("ERROR", `Erro ao gerar arquivo de queries: ${error.message}`);
+      this.logger.log(
+        "ERROR",
+        `Erro ao gerar arquivo de queries: ${(error as Error).message}`
+      );
       return false;
     }
   }
@@ -122,15 +117,18 @@ class BulkTestRunner {
       const queryData = JSON.parse(data);
       this.queries = queryData.queries || [];
       this.totalQueries = this.queries.length;
-      this.log("INFO", `Carregadas ${this.totalQueries} queries`);
+      this.logger.log("INFO", `Carregadas ${this.totalQueries} queries`);
       return true;
     } catch (error) {
-      this.log("ERROR", `Erro ao carregar queries: ${error.message}`);
+      this.logger.log(
+        "ERROR",
+        `Erro ao carregar queries: ${(error as Error).message}`
+      );
       return false;
     }
   }
 
-  async makeRequest(query, retryCount = 0) {
+  async makeRequest(query: string, retryCount = 0) {
     return new Promise((resolve) => {
       const encodedQuery = encodeURIComponent(query);
       // Usar o endpoint real de busca do reviews service
@@ -251,16 +249,24 @@ class BulkTestRunner {
   }
 
   async executeQueries() {
-    this.log(
+    this.logger.log(
       "INFO",
       `Iniciando execução de ${this.totalQueries} queries com concorrência ${this.concurrency}`
     );
-    this.log(
+    this.logger.log(
       "INFO",
       "Todas as queries serão executadas e armazenadas em cache no Dragonfly"
     );
 
-    const results = [];
+    type Result = {
+      success: boolean;
+      query: string;
+      responseTime: number;
+      status: number;
+      cached: boolean;
+    };
+
+    const results: Result[] = [];
     const startTime = Date.now();
 
     // Resetar contadores
@@ -268,9 +274,9 @@ class BulkTestRunner {
     this.errors = 0;
 
     // Executar queries com controle de concorrência
-    const executeChunk = async (queryChunk) => {
+    const executeChunk = async (queryChunk: string[]) => {
       const promises = queryChunk.map((query) => this.makeRequest(query));
-      const chunkResults = await Promise.all(promises);
+      const chunkResults = (await Promise.all(promises)) as Result[];
       results.push(...chunkResults);
 
       // Atualizar progresso após cada chunk
@@ -290,11 +296,11 @@ class BulkTestRunner {
 
     const totalTime = Date.now() - startTime;
 
-    this.log(
+    this.logger.log(
       "SUCCESS",
       `Queries executadas em ${(totalTime / 1000).toFixed(2)}s`
     );
-    this.log(
+    this.logger.log(
       "INFO",
       `Total: ${results.length} | Sucessos: ${results.filter((r) => r.success).length} | Erros: ${this.errors}`
     );
@@ -319,131 +325,12 @@ class BulkTestRunner {
       )
     );
 
-    this.log("INFO", `Resultados salvos em: ${path.basename(resultsFile)}`);
+    this.logger.log(
+      "INFO",
+      `Resultados salvos em: ${path.basename(resultsFile)}`
+    );
 
     return results;
-  }
-
-  async checkDragonflyData() {
-    try {
-      const result = await this.execCommand(
-        `redis-cli -h ${this.dragonflyHost} -p ${this.dragonflyPort} DBSIZE`
-      );
-      const keyCount = parseInt(result.stdout);
-      this.log("INFO", `Dragonfly contém ${keyCount} chaves em cache`);
-      return keyCount;
-    } catch (error) {
-      this.log(
-        "ERROR",
-        `Erro ao verificar dados do Dragonfly: ${error.message}`
-      );
-      return 0;
-    }
-  }
-
-  async migrateDragonflyToRedis() {
-    this.log("INFO", "Iniciando migração de dados do Dragonfly para o Redis");
-
-    try {
-      // Primeiro, verificar dados no Dragonfly
-      const dragonflyKeys = await this.checkDragonflyData();
-
-      if (dragonflyKeys === 0) {
-        this.log("WARN", "Não há dados no Dragonfly para migrar");
-        return false;
-      }
-
-      this.log("INFO", "Obtendo todas as chaves do Dragonfly...");
-      const keysResult = await this.execCommand(
-        `redis-cli -h ${this.dragonflyHost} -p ${this.dragonflyPort} KEYS "*"`
-      );
-      const keys = keysResult.stdout
-        .split("\n")
-        .filter((key) => key.trim() !== "");
-
-      if (keys.length === 0) {
-        this.log("WARN", "Nenhuma chave encontrada no Dragonfly");
-        return false;
-      }
-
-      this.log("INFO", `Encontradas ${keys.length} chaves para migrar`);
-
-      // Migrar chaves do Dragonfly para Redis
-      let migratedCount = 0;
-      let errorCount = 0;
-
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-
-        try {
-          // Obter TTL da chave do Dragonfly
-          const ttlResult = await this.execCommand(
-            `redis-cli -h ${this.dragonflyHost} -p ${this.dragonflyPort} TTL "${key}"`
-          );
-          const ttl = parseInt(ttlResult.stdout);
-
-          // Obter valor da chave do Dragonfly
-          const getResult = await this.execCommand(
-            `redis-cli -h ${this.dragonflyHost} -p ${this.dragonflyPort} GET "${key}"`
-          );
-          const value = getResult.stdout.trim();
-
-          if (value && value !== "(nil)") {
-            // Criar arquivo temporário de forma segura
-            const tempFile = `/tmp/redis_migration_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.txt`;
-
-            try {
-              // Escrever valor no arquivo usando Node.js (evita problemas com shell)
-              await fsPromises.writeFile(tempFile, value, "utf8");
-
-              // Migrar usando redis-cli com arquivo
-              let setCmd;
-              if (ttl > 0) {
-                setCmd = `redis-cli -h ${this.redisHost} -p ${this.redisPort} -x SETEX "${key}" ${ttl} < "${tempFile}"`;
-              } else {
-                setCmd = `redis-cli -h ${this.redisHost} -p ${this.redisPort} -x SET "${key}" < "${tempFile}"`;
-              }
-
-              await this.execCommand(setCmd);
-              migratedCount++;
-            } finally {
-              // Limpar arquivo temporário
-              await fsPromises.unlink(tempFile).catch(() => {});
-            }
-          }
-        } catch (error) {
-          errorCount++;
-          this.log("WARN", `Erro ao migrar chave ${key}: ${error.message}`);
-        }
-
-        // Atualizar progresso
-        const progress = (((i + 1) / keys.length) * 100).toFixed(1);
-        process.stdout.write(
-          `\r\x1b[35m[MIGRAÇÃO]\x1b[0m Progresso: ${i + 1}/${keys.length} (${progress}%) | Migradas: ${migratedCount} | Erros: ${errorCount}`
-        );
-      }
-
-      console.log(""); // Nova linha
-
-      // Verificar migração
-      const redisResult = await this.execCommand(
-        `redis-cli -h ${this.redisHost} -p ${this.redisPort} DBSIZE`
-      );
-      const redisKeysAfter = parseInt(redisResult.stdout);
-
-      this.log("SUCCESS", `Migração concluída!`);
-      this.log("INFO", `Chaves migradas: ${migratedCount}/${keys.length}`);
-      this.log("INFO", `Chaves no Redis após migração: ${redisKeysAfter}`);
-
-      if (errorCount > 0) {
-        this.log("WARN", `Erros durante migração: ${errorCount}`);
-      }
-
-      return migratedCount > 0;
-    } catch (error) {
-      this.log("ERROR", `Erro durante migração: ${error.message}`);
-      return false;
-    }
   }
 
   async run() {
@@ -481,14 +368,17 @@ class BulkTestRunner {
       console.log("\n🔄 ETAPA 4: Migração Dragonfly → Redis");
       console.log("-".repeat(50));
 
-      await this.migrateDragonflyToRedis();
+      await this.cacheController.migrateDragonflyToRedis();
 
       console.log("\n" + "=".repeat(80));
-      this.log("SUCCESS", "SCRIPT CONCLUÍDO COM SUCESSO!");
+      this.logger.log("SUCCESS", "SCRIPT CONCLUÍDO COM SUCESSO!");
       console.log("=".repeat(80) + "\n");
     } catch (error) {
       console.log("\n" + "=".repeat(80));
-      this.log("ERROR", `FALHA NA EXECUÇÃO: ${error.message}`);
+      this.logger.log(
+        "ERROR",
+        `FALHA NA EXECUÇÃO: ${(error as Error).message}`
+      );
       console.log("=".repeat(80) + "\n");
       process.exit(1);
     }
@@ -506,5 +396,16 @@ if (process.argv.length < 4) {
 }
 
 const [, , queryCount, concurrency] = process.argv;
-const test = new BulkTestRunner(queryCount, concurrency);
+
+const cli = new CLI();
+const logger = new Logger();
+const cacheController = new CacheController(logger, cli);
+const test = new BulkTestRunner(
+  queryCount,
+  concurrency,
+  logger,
+  cli,
+  cacheController
+);
+
 test.run().catch(console.error);

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+import fs from "fs";
+import path from "path";
 
-class KeywordGenerator {
+export class KeywordGenerator {
+  keywords: any;
+  generatedQueries: Set<string>;
+
   constructor() {
     this.keywords = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '../data/keywords.json'), 'utf8')
+      fs.readFileSync(path.join(__dirname, "../data/keywords.json"), "utf8")
     );
     this.generatedQueries = new Set();
   }
@@ -15,7 +18,7 @@ class KeywordGenerator {
   generateSingleWordQueries(count = 100) {
     const queries = [];
     const categories = this.keywords.categories;
-    
+
     // Combinar todas as palavras de todas as categorias
     const allWords = [
       ...categories.quality.positive,
@@ -32,7 +35,7 @@ class KeywordGenerator {
       ...categories.emotions,
       ...categories.time_expressions,
       ...categories.comparisons,
-      ...this.keywords.technical_terms
+      ...this.keywords.technical_terms,
     ];
 
     for (let i = 0; i < count; i++) {
@@ -53,34 +56,74 @@ class KeywordGenerator {
 
     const combinations = [
       // Produto + Qualidade
-      () => this.randomFrom(categories.products) + ' ' + this.randomFrom([...categories.quality.positive, ...categories.quality.negative]),
-      
+      () =>
+        this.randomFrom(categories.products) +
+        " " +
+        this.randomFrom([
+          ...categories.quality.positive,
+          ...categories.quality.negative,
+        ]),
+
       // Marca + Produto
-      () => this.randomFrom(categories.brands) + ' ' + this.randomFrom(categories.products),
-      
+      () =>
+        this.randomFrom(categories.brands) +
+        " " +
+        this.randomFrom(categories.products),
+
       // Produto + Feature
-      () => this.randomFrom(categories.products) + ' ' + this.randomFrom(categories.features),
-      
+      () =>
+        this.randomFrom(categories.products) +
+        " " +
+        this.randomFrom(categories.features),
+
       // Emoção + Produto
-      () => this.randomFrom(categories.emotions) + ' ' + this.randomFrom(categories.products),
-      
+      () =>
+        this.randomFrom(categories.emotions) +
+        " " +
+        this.randomFrom(categories.products),
+
       // Experiência + Produto
-      () => this.randomFrom([...categories.experience.positive, ...categories.experience.negative]) + ' ' + this.randomFrom(categories.products),
-      
-      // Valor + Produto  
-      () => this.randomFrom([...categories.value.positive, ...categories.value.negative]) + ' ' + this.randomFrom(categories.products),
-      
+      () =>
+        this.randomFrom([
+          ...categories.experience.positive,
+          ...categories.experience.negative,
+        ]) +
+        " " +
+        this.randomFrom(categories.products),
+
+      // Valor + Produto
+      () =>
+        this.randomFrom([
+          ...categories.value.positive,
+          ...categories.value.negative,
+        ]) +
+        " " +
+        this.randomFrom(categories.products),
+
       // Marca + Qualidade
-      () => this.randomFrom(categories.brands) + ' ' + this.randomFrom([...categories.quality.positive, ...categories.quality.negative]),
-      
+      () =>
+        this.randomFrom(categories.brands) +
+        " " +
+        this.randomFrom([
+          ...categories.quality.positive,
+          ...categories.quality.negative,
+        ]),
+
       // Produto + Serviço
-      () => this.randomFrom(categories.products) + ' ' + this.randomFrom([...categories.service.positive, ...categories.service.negative])
+      () =>
+        this.randomFrom(categories.products) +
+        " " +
+        this.randomFrom([
+          ...categories.service.positive,
+          ...categories.service.negative,
+        ]),
     ];
 
     for (let i = 0; i < count; i++) {
-      const generator = combinations[Math.floor(Math.random() * combinations.length)];
+      const generator =
+        combinations[Math.floor(Math.random() * combinations.length)];
       const query = generator().toLowerCase();
-      
+
       if (!this.generatedQueries.has(query)) {
         queries.push(query);
         this.generatedQueries.add(query);
@@ -115,13 +158,13 @@ class KeywordGenerator {
     for (let i = 0; i < count; i++) {
       const isCombo = Math.random() > 0.5;
       let query;
-      
+
       if (isCombo) {
-        query = this.randomFrom(products) + ' ' + this.randomFrom(technical);
+        query = this.randomFrom(products) + " " + this.randomFrom(technical);
       } else {
         query = this.randomFrom(technical);
       }
-      
+
       if (!this.generatedQueries.has(query)) {
         queries.push(query);
         this.generatedQueries.add(query);
@@ -134,14 +177,22 @@ class KeywordGenerator {
   // Geração de queries raras (para testar cache miss)
   generateRareQueries(count = 25) {
     const queries = [];
-    const prefixes = ['rare', 'unique', 'special', 'custom', 'unusual', 'weird', 'strange'];
+    const prefixes = [
+      "rare",
+      "unique",
+      "special",
+      "custom",
+      "unusual",
+      "weird",
+      "strange",
+    ];
     const products = this.keywords.categories.products;
 
     for (let i = 0; i < count; i++) {
       const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
       const product = this.randomFrom(products);
       const query = `${prefix} ${product}`;
-      
+
       if (!this.generatedQueries.has(query)) {
         queries.push(query);
         this.generatedQueries.add(query);
@@ -152,23 +203,30 @@ class KeywordGenerator {
   }
 
   // Método auxiliar para seleção aleatória
-  randomFrom(array) {
+  randomFrom(array: string[]) {
     return array[Math.floor(Math.random() * array.length)];
   }
 
   // Geração de conjunto completo de queries
-  generateQuerySet(options = {}) {
+  generateQuerySet(options: {
+    single?: number;
+    composite?: number;
+    phrases?: number;
+    technical?: number;
+    rare?: number;
+    duplicateRatio?: number;
+  }) {
     const {
       single = 200,
       composite = 300,
       phrases = 100,
       technical = 100,
       rare = 50,
-      duplicateRatio = 0.2 // 20% de queries duplicadas para testar cache hit
+      duplicateRatio = 0.2, // 20% de queries duplicadas para testar cache hit
     } = options;
 
-    console.log('🔄 Generating query set...');
-    
+    console.log("🔄 Generating query set...");
+
     const singleQueries = this.generateSingleWordQueries(single);
     const compositeQueries = this.generateCompositeQueries(composite);
     const phraseQueries = this.generatePhraseQueries(phrases);
@@ -180,13 +238,14 @@ class KeywordGenerator {
       ...compositeQueries,
       ...phraseQueries,
       ...technicalQueries,
-      ...rareQueries
+      ...rareQueries,
     ];
 
     // Adicionar queries duplicadas para simular cache hits
     const duplicateCount = Math.floor(allQueries.length * duplicateRatio);
     for (let i = 0; i < duplicateCount; i++) {
-      const randomQuery = allQueries[Math.floor(Math.random() * allQueries.length)];
+      const randomQuery =
+        allQueries[Math.floor(Math.random() * allQueries.length)];
       allQueries.push(randomQuery);
     }
 
@@ -212,14 +271,14 @@ class KeywordGenerator {
           composite: compositeQueries.length,
           phrases: phraseQueries.length,
           technical: technicalQueries.length,
-          rare: rareQueries.length
-        }
-      }
+          rare: rareQueries.length,
+        },
+      },
     };
   }
 
   // Método auxiliar para embaralhar array
-  shuffleArray(array) {
+  shuffleArray(array: string[]) {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -229,12 +288,15 @@ class KeywordGenerator {
   }
 
   // Salvar queries em arquivo
-  saveQueries(queries, filename = 'generated-queries.json') {
-    const outputPath = path.join(__dirname, '../data', filename);
+  saveQueries(
+    queries: { queries: string[]; stats: any },
+    filename = "generated-queries.json"
+  ) {
+    const outputPath = path.join(__dirname, "../data", filename);
     const data = {
       generated_at: new Date().toISOString(),
       queries: queries.queries,
-      stats: queries.stats
+      stats: queries.stats,
     };
 
     fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
@@ -246,32 +308,30 @@ class KeywordGenerator {
 // CLI Usage
 if (require.main === module) {
   const generator = new KeywordGenerator();
-  
+
   const args = process.argv.slice(2);
   const count = args[0] ? parseInt(args[0]) : 1000;
-  
+
   console.log(`🚀 Generating ${count} search queries for load testing...`);
-  
+
   // Calcular distribuição proporcional
   const distribution = {
-    single: Math.floor(count * 0.3),     // 30% queries simples
-    composite: Math.floor(count * 0.4),  // 40% queries compostas
-    phrases: Math.floor(count * 0.15),   // 15% frases
-    technical: Math.floor(count * 0.1),  // 10% técnicas
-    rare: Math.floor(count * 0.05),      // 5% raras
-    duplicateRatio: 0.2                  // 20% duplicadas
+    single: Math.floor(count * 0.3), // 30% queries simples
+    composite: Math.floor(count * 0.4), // 40% queries compostas
+    phrases: Math.floor(count * 0.15), // 15% frases
+    technical: Math.floor(count * 0.1), // 10% técnicas
+    rare: Math.floor(count * 0.05), // 5% raras
+    duplicateRatio: 0.2, // 20% duplicadas
   };
 
   const querySet = generator.generateQuerySet(distribution);
   const outputFile = generator.saveQueries(querySet, `queries-${count}.json`);
-  
-  console.log('\n📊 Query Distribution:');
+
+  console.log("\n📊 Query Distribution:");
   console.log(`Total: ${querySet.stats.total}`);
   console.log(`Unique: ${querySet.stats.unique}`);
   console.log(`Cache hit simulation: ${querySet.stats.duplicates} duplicates`);
-  
-  console.log('\n🎯 Ready for load testing!');
+
+  console.log("\n🎯 Ready for load testing!");
   console.log(`Use: node load-test-runner.js ${outputFile}`);
 }
-
-module.exports = KeywordGenerator;
