@@ -38,12 +38,24 @@ export class KeywordGenerator {
       ...this.keywords.technical_terms,
     ];
 
-    for (let i = 0; i < count; i++) {
-      const word = allWords[Math.floor(Math.random() * allWords.length)];
-      if (!this.generatedQueries.has(word)) {
-        queries.push(word);
-        this.generatedQueries.add(word);
+    const uniqueQueries = new Set<string>();
+    
+    // Primeiro, adicionar todas as palavras únicas
+    allWords.forEach(word => {
+      if (uniqueQueries.size < count) {
+        uniqueQueries.add(word);
       }
+    });
+
+    // Se ainda precisamos de mais queries, permitir duplicatas
+    while (queries.length < count) {
+      const word = allWords[Math.floor(Math.random() * allWords.length)];
+      queries.push(word);
+    }
+
+    // Se temos queries únicas suficientes, usar apenas elas
+    if (uniqueQueries.size >= count) {
+      return Array.from(uniqueQueries).slice(0, count);
     }
 
     return queries;
@@ -117,17 +129,41 @@ export class KeywordGenerator {
           ...categories.service.positive,
           ...categories.service.negative,
         ]),
+
+      // Combinações de 3 palavras
+      () =>
+        this.randomFrom(categories.brands) +
+        " " +
+        this.randomFrom(categories.products) +
+        " " +
+        this.randomFrom(categories.features),
+
+      // Feature + Qualidade + Produto
+      () =>
+        this.randomFrom(categories.features) +
+        " " +
+        this.randomFrom([
+          ...categories.quality.positive,
+          ...categories.quality.negative,
+        ]) +
+        " " +
+        this.randomFrom(categories.products),
+
+      // Emoção + Marca + Produto
+      () =>
+        this.randomFrom(categories.emotions) +
+        " " +
+        this.randomFrom(categories.brands) +
+        " " +
+        this.randomFrom(categories.products),
     ];
 
+    // Gerar queries sem verificação de duplicatas para atingir o count
     for (let i = 0; i < count; i++) {
       const generator =
         combinations[Math.floor(Math.random() * combinations.length)];
       const query = generator().toLowerCase();
-
-      if (!this.generatedQueries.has(query)) {
-        queries.push(query);
-        this.generatedQueries.add(query);
-      }
+      queries.push(query);
     }
 
     return queries;
@@ -138,12 +174,10 @@ export class KeywordGenerator {
     const queries = [];
     const phrases = this.keywords.common_phrases;
 
+    // Gerar queries permitindo duplicatas para atingir o count
     for (let i = 0; i < count; i++) {
       const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-      if (!this.generatedQueries.has(phrase)) {
-        queries.push(phrase);
-        this.generatedQueries.add(phrase);
-      }
+      queries.push(phrase);
     }
 
     return queries;
@@ -154,21 +188,24 @@ export class KeywordGenerator {
     const queries = [];
     const technical = this.keywords.technical_terms;
     const products = this.keywords.categories.products;
+    const features = this.keywords.categories.features;
 
     for (let i = 0; i < count; i++) {
-      const isCombo = Math.random() > 0.5;
+      const combinationType = Math.random();
       let query;
 
-      if (isCombo) {
+      if (combinationType < 0.33) {
+        // Produto + Termo técnico
         query = this.randomFrom(products) + " " + this.randomFrom(technical);
+      } else if (combinationType < 0.66) {
+        // Feature + Termo técnico
+        query = this.randomFrom(features) + " " + this.randomFrom(technical);
       } else {
+        // Apenas termo técnico
         query = this.randomFrom(technical);
       }
 
-      if (!this.generatedQueries.has(query)) {
-        queries.push(query);
-        this.generatedQueries.add(query);
-      }
+      queries.push(query);
     }
 
     return queries;
@@ -178,25 +215,129 @@ export class KeywordGenerator {
   generateRareQueries(count = 25) {
     const queries = [];
     const prefixes = [
-      "rare",
-      "unique",
-      "special",
-      "custom",
-      "unusual",
-      "weird",
-      "strange",
+      "rare", "unique", "special", "custom", "unusual", "weird", "strange",
+      "exotic", "limited", "exclusive", "premium", "deluxe", "vintage", 
+      "retro", "modern", "classic", "innovative", "advanced", "basic",
+      "mini", "compact", "large", "mega", "ultra", "super", "hyper"
     ];
     const products = this.keywords.categories.products;
+    const suffixes = [
+      "edition", "version", "model", "series", "collection", "variant",
+      "style", "type", "design", "format", "size", "color", "finish"
+    ];
 
     for (let i = 0; i < count; i++) {
-      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-      const product = this.randomFrom(products);
-      const query = `${prefix} ${product}`;
+      const queryType = Math.random();
+      let query;
 
-      if (!this.generatedQueries.has(query)) {
-        queries.push(query);
-        this.generatedQueries.add(query);
+      if (queryType < 0.5) {
+        // Prefix + Produto
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const product = this.randomFrom(products);
+        query = `${prefix} ${product}`;
+      } else {
+        // Produto + Suffix
+        const product = this.randomFrom(products);
+        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+        query = `${product} ${suffix}`;
       }
+
+      queries.push(query);
+    }
+
+    return queries;
+  }
+
+  // Geração de queries numéricas (para grande volume)
+  generateNumericQueries(count = 100) {
+    const queries = [];
+    const categories = this.keywords.categories;
+    const numbers = Array.from({length: 1000}, (_, i) => (i + 1).toString());
+    
+    for (let i = 0; i < count; i++) {
+      const queryType = Math.random();
+      let query;
+
+      if (queryType < 0.3) {
+        // Produto + Número
+        query = `${this.randomFrom(categories.products)} ${this.randomFrom(numbers)}`;
+      } else if (queryType < 0.6) {
+        // Marca + Número
+        query = `${this.randomFrom(categories.brands)} ${this.randomFrom(numbers)}`;
+      } else {
+        // Feature + Número
+        query = `${this.randomFrom(categories.features)} ${this.randomFrom(numbers)}`;
+      }
+
+      queries.push(query);
+    }
+
+    return queries;
+  }
+
+  // Geração de queries com variações de sufixos
+  generateVariationQueries(count = 100) {
+    const queries = [];
+    const categories = this.keywords.categories;
+    const variations = ['s', 'ed', 'ing', 'er', 'est', 'ly', 'ness', 'tion', 'able', 'ful'];
+    
+    const baseWords = [
+      ...categories.quality.positive,
+      ...categories.quality.negative,
+      ...categories.experience.positive,
+      ...categories.experience.negative,
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const baseWord = this.randomFrom(baseWords);
+      const variation = this.randomFrom(variations);
+      const product = this.randomFrom(categories.products);
+      
+      // Alternar entre palavra variada + produto ou só palavra variada
+      if (Math.random() > 0.5) {
+        queries.push(`${baseWord}${variation} ${product}`);
+      } else {
+        queries.push(`${baseWord}${variation}`);
+      }
+    }
+
+    return queries;
+  }
+
+  // Geração de queries com combinações aleatórias extensas
+  generateRandomCombinations(count = 100) {
+    const queries = [];
+    const categories = this.keywords.categories;
+    
+    // Criar um pool grande de todas as palavras
+    const allWords = [
+      ...categories.quality.positive,
+      ...categories.quality.negative,
+      ...categories.experience.positive,
+      ...categories.experience.negative,
+      ...categories.service.positive,
+      ...categories.service.negative,
+      ...categories.value.positive,
+      ...categories.value.negative,
+      ...categories.features,
+      ...categories.products,
+      ...categories.brands,
+      ...categories.emotions,
+      ...categories.time_expressions,
+      ...categories.comparisons,
+      ...this.keywords.technical_terms,
+      ...this.keywords.common_phrases
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const wordCount = Math.floor(Math.random() * 4) + 1; // 1-4 palavras
+      const words = [];
+      
+      for (let j = 0; j < wordCount; j++) {
+        words.push(this.randomFrom(allWords));
+      }
+      
+      queries.push(words.join(' ').toLowerCase());
     }
 
     return queries;
@@ -214,6 +355,9 @@ export class KeywordGenerator {
     phrases?: number;
     technical?: number;
     rare?: number;
+    numeric?: number;
+    variations?: number;
+    randomCombinations?: number;
     duplicateRatio?: number;
   }) {
     const {
@@ -222,6 +366,9 @@ export class KeywordGenerator {
       phrases = 100,
       technical = 100,
       rare = 50,
+      numeric = 0,
+      variations = 0,
+      randomCombinations = 0,
       duplicateRatio = 0.2, // 20% de queries duplicadas para testar cache hit
     } = options;
 
@@ -232,6 +379,9 @@ export class KeywordGenerator {
     const phraseQueries = this.generatePhraseQueries(phrases);
     const technicalQueries = this.generateTechnicalQueries(technical);
     const rareQueries = this.generateRareQueries(rare);
+    const numericQueries = numeric > 0 ? this.generateNumericQueries(numeric) : [];
+    const variationQueries = variations > 0 ? this.generateVariationQueries(variations) : [];
+    const randomQueries = randomCombinations > 0 ? this.generateRandomCombinations(randomCombinations) : [];
 
     let allQueries = [
       ...singleQueries,
@@ -239,6 +389,9 @@ export class KeywordGenerator {
       ...phraseQueries,
       ...technicalQueries,
       ...rareQueries,
+      ...numericQueries,
+      ...variationQueries,
+      ...randomQueries,
     ];
 
     // Adicionar queries duplicadas para simular cache hits
@@ -258,13 +411,16 @@ export class KeywordGenerator {
     console.log(`   - Phrases: ${phraseQueries.length}`);
     console.log(`   - Technical: ${technicalQueries.length}`);
     console.log(`   - Rare: ${rareQueries.length}`);
+    if (numericQueries.length > 0) console.log(`   - Numeric: ${numericQueries.length}`);
+    if (variationQueries.length > 0) console.log(`   - Variations: ${variationQueries.length}`);
+    if (randomQueries.length > 0) console.log(`   - Random combinations: ${randomQueries.length}`);
     console.log(`   - Duplicates: ${duplicateCount}`);
 
     return {
       queries: allQueries,
       stats: {
         total: allQueries.length,
-        unique: this.generatedQueries.size,
+        unique: new Set(allQueries).size,
         duplicates: duplicateCount,
         categories: {
           single: singleQueries.length,
@@ -272,6 +428,9 @@ export class KeywordGenerator {
           phrases: phraseQueries.length,
           technical: technicalQueries.length,
           rare: rareQueries.length,
+          numeric: numericQueries.length,
+          variations: variationQueries.length,
+          randomCombinations: randomQueries.length,
         },
       },
     };
@@ -314,15 +473,36 @@ if (require.main === module) {
 
   console.log(`🚀 Generating ${count} search queries for load testing...`);
 
-  // Calcular distribuição proporcional
-  const distribution = {
-    single: Math.floor(count * 0.3), // 30% queries simples
-    composite: Math.floor(count * 0.4), // 40% queries compostas
-    phrases: Math.floor(count * 0.15), // 15% frases
-    technical: Math.floor(count * 0.1), // 10% técnicas
-    rare: Math.floor(count * 0.05), // 5% raras
-    duplicateRatio: 0.2, // 20% duplicadas
-  };
+  // Calcular distribuição proporcional baseada no volume
+  let distribution;
+  
+  if (count <= 10000) {
+    // Distribuição padrão para volumes menores
+    distribution = {
+      single: Math.floor(count * 0.25), // 25% queries simples
+      composite: Math.floor(count * 0.35), // 35% queries compostas
+      phrases: Math.floor(count * 0.15), // 15% frases
+      technical: Math.floor(count * 0.10), // 10% técnicas
+      rare: Math.floor(count * 0.05), // 5% raras
+      numeric: Math.floor(count * 0.10), // 10% numéricas
+      variations: 0,
+      randomCombinations: 0,
+      duplicateRatio: 0.2, // 20% duplicadas
+    };
+  } else {
+    // Distribuição para volumes grandes (>10k)
+    distribution = {
+      single: Math.floor(count * 0.15), // 15% queries simples
+      composite: Math.floor(count * 0.25), // 25% queries compostas
+      phrases: Math.floor(count * 0.10), // 10% frases
+      technical: Math.floor(count * 0.10), // 10% técnicas
+      rare: Math.floor(count * 0.05), // 5% raras
+      numeric: Math.floor(count * 0.15), // 15% numéricas
+      variations: Math.floor(count * 0.10), // 10% variações
+      randomCombinations: Math.floor(count * 0.10), // 10% combinações aleatórias
+      duplicateRatio: 0.3, // 30% duplicadas para grandes volumes
+    };
+  }
 
   const querySet = generator.generateQuerySet(distribution);
   const outputFile = generator.saveQueries(querySet, `queries-${count}.json`);
