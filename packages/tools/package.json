@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "test:bulk": "tsx load-testing/scripts/bulk-test-runner.ts",
     "query:generate": "tsx load-testing/scripts/query-generator.ts",
-    "bulk:test": "tsx load-testing/scripts/bulk-test-runner.ts",
     "benchmark:analyze": "tsx load-testing/scripts/benchmark-analyzer.ts",
+    "keyword:analyze": "tsx load-testing/scripts/keyword-analyzer.ts",
     "cache:comparison": "tsx load-testing/scripts/cache-result-comparison.ts",
     "cache:comparison:single": "tsx load-testing/scripts/single-cache-result-comparison.ts"
   },
