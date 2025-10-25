@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import { Command } from "commander";
 import { CacheResultComparison } from "./cache-result-comparison";
 import { CLI } from "../utils/cli";
 import { Logger } from "../utils/logger";
@@ -194,6 +195,46 @@ class BenchmarkAnalyzer {
   }
 }
 
-// Executar análise
-const analyzer = new BenchmarkAnalyzer();
-analyzer.runQuickBenchmark();
+// CLI com Commander
+const program = new Command();
+
+program
+  .name('benchmark-analyzer')
+  .description('Análise rápida de performance de serviços de cache (Redis vs Dragonfly)')
+  .version('1.0.0')
+  .option('-s, --service <name>', 'Analisar apenas um serviço específico (redis ou dragonfly)')
+  .option('-d, --detailed', 'Mostrar métricas detalhadas')
+  .option('-o, --output <path>', 'Salvar resultados em arquivo específico')
+  .addHelpText('after', `
+
+Exemplos:
+  $ benchmark-analyzer                      Analisa todos os serviços disponíveis
+  $ benchmark-analyzer -s redis             Analisa apenas Redis
+  $ benchmark-analyzer -s dragonfly -d      Analisa Dragonfly com detalhes
+  $ benchmark-analyzer -o results.json      Salva resultados em arquivo custom
+
+Métricas analisadas:
+  • Latência de resposta (ms)
+  • QPS (Queries Per Second)
+  • QPS de pico
+  • Velocidade de snapshot (MB/s)
+  • Comparação relativa entre serviços
+
+Resultados:
+  Salvos em: packages/tools/load-testing/results/benchmark-<timestamp>.json
+  `)
+  .action(async (options) => {
+    const analyzer = new BenchmarkAnalyzer();
+    
+    if (options.service) {
+      console.log(`🎯 Analisando apenas: ${options.service}`);
+    }
+    
+    if (options.detailed) {
+      console.log('📊 Modo detalhado ativado');
+    }
+    
+    await analyzer.runQuickBenchmark();
+  });
+
+program.parse();

@@ -3,15 +3,22 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc -b",
-    "watch": "tsc -b -w",
-    "clean": "tsc -b -f -clean"
+    "query:generate": "tsx load-testing/scripts/query-generator.ts",
+    "bulk:test": "tsx load-testing/scripts/bulk-test-runner.ts",
+    "benchmark:analyze": "tsx load-testing/scripts/benchmark-analyzer.ts",
+    "cache:comparison": "tsx load-testing/scripts/cache-result-comparison.ts",
+    "cache:comparison:single": "tsx load-testing/scripts/single-cache-result-comparison.ts"
   },
   "devDependencies": {
-    "@daap/typescript-config": "workspace:*",
     "@daap/eslint-config": "workspace:*",
+    "@daap/typescript-config": "workspace:*",
     "@types/node": "^20.19.19",
-    "typescript": "^5.2.2",
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@types/commander": "^2.12.5",
+    "commander": "^14.0.2"
   }
 }

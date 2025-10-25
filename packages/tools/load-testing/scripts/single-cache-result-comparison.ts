@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import { Command } from "commander";
 import { CacheResultComparison } from "./cache-result-comparison";
 import { CLI } from "../utils/cli";
 import { Logger } from "../utils/logger";
@@ -164,16 +165,55 @@ class SingleFileComparison extends CacheResultComparison {
   }
 }
 
-// Verificar argumentos da linha de comando
-const args = process.argv.slice(2);
+// CLI com Commander
+const program = new Command();
 
-if (args.length === 0) {
-  console.log("❌ Por favor, forneça o nome do arquivo de resultado.");
-  console.log("📝 Uso: tsx run-single-file-comparison.ts <nome-do-arquivo>");
-  console.log("📝 Exemplo: tsx run-single-file-comparison.ts cache-test-100-1759589297344.json");
-  process.exit(1);
-}
+program
+  .name('single-cache-result-comparison')
+  .description('Compara resultados de cache de um arquivo específico entre Redis e Dragonfly')
+  .version('1.0.0')
+  .argument('<filename>', 'Nome do arquivo de resultado a analisar')
+  .option('-l, --list', 'Listar arquivos de resultado disponíveis')
+  .option('-v, --verbose', 'Mostrar logs detalhados')
+  .addHelpText('after', `
 
-const fileName = args[0];
-const comparison = new SingleFileComparison();
-comparison.runSingleFile(fileName);
+Exemplos:
+  $ single-cache-result-comparison cache-test-100-1759589297344.json
+  $ single-cache-result-comparison -l                    Lista arquivos disponíveis
+  $ single-cache-result-comparison file.json -v          Modo verboso
+
+Formato do arquivo:
+  O arquivo deve estar em: packages/tools/load-testing/results/
+  Formato esperado: cache-test-<queries>-<timestamp>.json
+
+Análise realizada:
+  • Comparação de latência entre serviços
+  • Métricas de QPS e throughput
+  • Velocidade de snapshot
+  • Identificação de queries em cache vs não-cache
+  • Estatísticas agregadas
+
+Saída:
+  Relatório detalhado no console + arquivo JSON de comparação
+  `)
+  .action(async (filename: string, options) => {
+    if (options.list) {
+      const resultsDir = path.join(__dirname, "../results");
+      const files = await fs.readdir(resultsDir);
+      const cacheFiles = files.filter(f => f.startsWith("cache-test-") && f.endsWith(".json"));
+      
+      console.log("\n📁 Arquivos de resultado disponíveis:");
+      cacheFiles.forEach(file => console.log(`  • ${file}`));
+      console.log("");
+      return;
+    }
+
+    if (options.verbose) {
+      console.log("🔍 Modo verboso ativado");
+    }
+
+    const comparison = new SingleFileComparison();
+    await comparison.runSingleFile(filename);
+  });
+
+program.parse();

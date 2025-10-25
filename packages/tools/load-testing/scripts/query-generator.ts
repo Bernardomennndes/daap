@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import path from "path";
+import { Command } from "commander";
 
 export class KeywordGenerator {
   keywords: any;
@@ -464,54 +465,95 @@ export class KeywordGenerator {
   }
 }
 
-// CLI Usage
+// CLI com Commander
 if (require.main === module) {
-  const generator = new KeywordGenerator();
+  const program = new Command();
 
-  const args = process.argv.slice(2);
-  const count = args[0] ? parseInt(args[0]) : 1000;
+  program
+    .name('query-generator')
+    .description('Gerador de queries de busca para testes de carga em serviços de cache')
+    .version('1.0.0')
+    .argument('[count]', 'Número de queries a gerar', '1000')
+    .option('-o, --output <filename>', 'Nome do arquivo de saída (sem extensão)')
+    .option('--simple <percent>', 'Porcentagem de queries simples (0-100)', '25')
+    .option('--composite <percent>', 'Porcentagem de queries compostas (0-100)', '35')
+    .option('--phrases <percent>', 'Porcentagem de frases (0-100)', '15')
+    .option('--duplicates <ratio>', 'Razão de queries duplicadas (0-1)', '0.2')
+    .addHelpText('after', `
 
-  console.log(`🚀 Generating ${count} search queries for load testing...`);
+Exemplos:
+  $ query-generator 1000                    Gera 1000 queries com distribuição padrão
+  $ query-generator 5000 -o custom-queries  Gera 5000 queries em arquivo custom
+  $ query-generator 10000 --duplicates 0.3  Gera 10000 com 30% duplicadas
 
-  // Calcular distribuição proporcional baseada no volume
-  let distribution;
-  
-  if (count <= 10000) {
-    // Distribuição padrão para volumes menores
-    distribution = {
-      single: Math.floor(count * 0.25), // 25% queries simples
-      composite: Math.floor(count * 0.35), // 35% queries compostas
-      phrases: Math.floor(count * 0.15), // 15% frases
-      technical: Math.floor(count * 0.10), // 10% técnicas
-      rare: Math.floor(count * 0.05), // 5% raras
-      numeric: Math.floor(count * 0.10), // 10% numéricas
-      variations: 0,
-      randomCombinations: 0,
-      duplicateRatio: 0.2, // 20% duplicadas
-    };
-  } else {
-    // Distribuição para volumes grandes (>10k)
-    distribution = {
-      single: Math.floor(count * 0.15), // 15% queries simples
-      composite: Math.floor(count * 0.25), // 25% queries compostas
-      phrases: Math.floor(count * 0.10), // 10% frases
-      technical: Math.floor(count * 0.10), // 10% técnicas
-      rare: Math.floor(count * 0.05), // 5% raras
-      numeric: Math.floor(count * 0.15), // 15% numéricas
-      variations: Math.floor(count * 0.10), // 10% variações
-      randomCombinations: Math.floor(count * 0.10), // 10% combinações aleatórias
-      duplicateRatio: 0.3, // 30% duplicadas para grandes volumes
-    };
-  }
+Distribuição automática:
+  - Volumes ≤10k: Distribuição balanceada para testes rápidos
+  - Volumes >10k: Distribuição otimizada com mais variações
 
-  const querySet = generator.generateQuerySet(distribution);
-  const outputFile = generator.saveQueries(querySet, `queries-${count}.json`);
+Tipos de queries geradas:
+  • Single: Queries de uma palavra (ex: "quality", "service")
+  • Composite: Queries compostas (ex: "good smartphone", "expensive hotel")
+  • Phrases: Frases completas (ex: "I love this product")
+  • Technical: Termos técnicos (ex: "API integration", "performance")
+  • Rare: Combinações raras e incomuns
+  • Numeric: Queries com números (ex: "2 years", "5 stars")
+  • Variations: Variações de queries existentes
+  • Random: Combinações aleatórias
 
-  console.log("\n📊 Query Distribution:");
-  console.log(`Total: ${querySet.stats.total}`);
-  console.log(`Unique: ${querySet.stats.unique}`);
-  console.log(`Cache hit simulation: ${querySet.stats.duplicates} duplicates`);
+Arquivos de saída:
+  Salvos em: packages/tools/load-testing/data/queries-<count>.json
+    `)
+    .action((count: string, options) => {
+      const generator = new KeywordGenerator();
+      const queryCount = parseInt(count);
 
-  console.log("\n🎯 Ready for load testing!");
-  console.log(`Use: node load-test-runner.js ${outputFile}`);
+      console.log(`🚀 Generating ${queryCount} search queries for load testing...`);
+
+      // Calcular distribuição proporcional baseada no volume
+      let distribution;
+      
+      if (queryCount <= 10000) {
+        // Distribuição padrão para volumes menores
+        distribution = {
+          single: Math.floor(queryCount * 0.25), // 25% queries simples
+          composite: Math.floor(queryCount * 0.35), // 35% queries compostas
+          phrases: Math.floor(queryCount * 0.15), // 15% frases
+          technical: Math.floor(queryCount * 0.10), // 10% técnicas
+          rare: Math.floor(queryCount * 0.05), // 5% raras
+          numeric: Math.floor(queryCount * 0.10), // 10% numéricas
+          variations: 0,
+          randomCombinations: 0,
+          duplicateRatio: parseFloat(options.duplicates) || 0.2,
+        };
+      } else {
+        // Distribuição para volumes grandes (>10k)
+        distribution = {
+          single: Math.floor(queryCount * 0.15), // 15% queries simples
+          composite: Math.floor(queryCount * 0.25), // 25% queries compostas
+          phrases: Math.floor(queryCount * 0.10), // 10% frases
+          technical: Math.floor(queryCount * 0.10), // 10% técnicas
+          rare: Math.floor(queryCount * 0.05), // 5% raras
+          numeric: Math.floor(queryCount * 0.15), // 15% numéricas
+          variations: Math.floor(queryCount * 0.10), // 10% variações
+          randomCombinations: Math.floor(queryCount * 0.10), // 10% combinações aleatórias
+          duplicateRatio: parseFloat(options.duplicates) || 0.3,
+        };
+      }
+
+      const querySet = generator.generateQuerySet(distribution);
+      const filename = options.output 
+        ? `${options.output}.json` 
+        : `queries-${queryCount}.json`;
+      const outputFile = generator.saveQueries(querySet, filename);
+
+      console.log("\n📊 Query Distribution:");
+      console.log(`Total: ${querySet.stats.total}`);
+      console.log(`Unique: ${querySet.stats.unique}`);
+      console.log(`Cache hit simulation: ${querySet.stats.duplicates} duplicates`);
+
+      console.log("\n🎯 Ready for load testing!");
+      console.log(`Use: node load-test-runner.js ${outputFile}`);
+    });
+
+  program.parse();
 }

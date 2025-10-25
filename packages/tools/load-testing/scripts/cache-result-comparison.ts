@@ -3,6 +3,7 @@ import { Logger } from "../utils/logger";
 import { CacheController } from "../utils/cache";
 import { promises as fs } from "fs";
 import path from "path";
+import { Command } from "commander";
 
 interface CacheTestResult {
   success: boolean;
@@ -537,8 +538,55 @@ export class CacheResultComparison {
   }
 }
 
-// Executar se chamado diretamente
+// CLI com Commander
 if (require.main === module) {
-  const comparison = new CacheResultComparison();
-  comparison.run().catch(console.error);
+  const program = new Command();
+
+  program
+    .name('cache-result-comparison')
+    .description('Compara resultados de cache entre todos os arquivos de teste disponíveis')
+    .version('1.0.0')
+    .option('-f, --filter <pattern>', 'Filtrar arquivos por padrão (ex: cache-test-1000*)')
+    .option('-l, --limit <number>', 'Limitar número de arquivos a processar', '10')
+    .option('-s, --sort <field>', 'Ordenar por campo (date, size, queries)', 'date')
+    .option('--no-redis', 'Pular testes com Redis')
+    .option('--no-dragonfly', 'Pular testes com Dragonfly')
+    .addHelpText('after', `
+
+Exemplos:
+  $ cache-result-comparison                      Processa todos os arquivos
+  $ cache-result-comparison -l 5                 Processa apenas 5 arquivos
+  $ cache-result-comparison -f "cache-test-1000*" Filtra por padrão
+  $ cache-result-comparison --no-redis           Testa apenas Dragonfly
+
+Funcionamento:
+  1. Localiza arquivos cache-test-*.json em results/
+  2. Para cada arquivo, executa queries novamente
+  3. Compara com Redis e Dragonfly
+  4. Gera relatórios comparativos
+
+Métricas geradas:
+  • Latência média (default vs cache services)
+  • QPS (Queries Per Second)
+  • Velocidade de snapshot
+  • Ganho de performance percentual
+  • Identificação de queries mais lentas
+
+Saída:
+  Relatórios salvos em: results/comparison-report-<timestamp>.json
+  `)
+    .action(async (options) => {
+      if (options.filter) {
+        console.log(`🔍 Filtrando por: ${options.filter}`);
+      }
+      
+      if (options.limit) {
+        console.log(`📊 Limite de arquivos: ${options.limit}`);
+      }
+
+      const comparison = new CacheResultComparison();
+      await comparison.run();
+    });
+
+  program.parse();
 }

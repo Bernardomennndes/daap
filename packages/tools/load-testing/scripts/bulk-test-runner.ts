@@ -8,14 +8,12 @@
  * 2. Executa queries concorrentes e armazena no cache Redis
  * 3. Migra dados do Redis para o Dragonfly
  * 4. Mostra progresso em tempo real
- *
- * Uso: node bulk-test-runner.js <queries> <concorrencia>
- * Exemplo: node bulk-test-runner.js 1000 10
  */
 
 import fs from "fs";
 import path from "path";
 import http from "http";
+import { Command } from "commander";
 
 import { Logger } from "../utils/logger";
 import { CLI } from "../utils/cli";
@@ -403,27 +401,56 @@ class BulkTestRunner {
   }
 }
 
-// Verificar argumentos da linha de comando
-if (process.argv.length < 4) {
-  console.log("\nUso: node bulk-test-runner.js <queries> <concorrencia>");
-  console.log("Exemplo: node bulk-test-runner.js 1000 10\n");
-  console.log("Parâmetros:");
-  console.log("  queries      - Número total de queries a executar");
-  console.log("  concorrencia - Número de queries simultâneas\n");
-  process.exit(1);
-}
+// Configurar CLI com Commander
+const program = new Command();
 
-const [, , queryCount, concurrency] = process.argv;
+program
+  .name('bulk-test-runner')
+  .description('Executa testes de cache em lote com queries concorrentes e migração de dados')
+  .version('1.0.0')
+  .argument('<queries>', 'Número total de queries a executar')
+  .argument('<concurrency>', 'Número de queries simultâneas')
+  .option('-v, --verbose', 'Modo verboso com logs detalhados')
+  .option('--skip-migration', 'Pular a etapa de migração de cache')
+  .addHelpText('after', `
 
-const cli = new CLI();
-const logger = new Logger();
-const cacheController = new CacheController(logger, cli);
-const test = new BulkTestRunner(
-  queryCount,
-  concurrency,
-  logger,
-  cli,
-  cacheController
-);
+Exemplos:
+  $ bulk-test-runner 1000 10          Executa 1000 queries com concorrência de 10
+  $ bulk-test-runner 5000 20 -v       Executa 5000 queries com logs detalhados
+  $ bulk-test-runner 100 5 --skip-migration   Executa queries sem migração
 
-test.run().catch(console.error);
+Descrição:
+  Este script realiza testes de carga em serviços de cache, executando
+  queries concorrentes e armazenando resultados. Também migra dados entre
+  Redis e Dragonfly para análise de performance.
+
+Etapas executadas:
+  1. Verificação/criação de arquivo de queries
+  2. Carregamento de queries
+  3. Execução concorrente com cache no Dragonfly
+  4. Migração opcional de Dragonfly para Redis
+  `)
+  .action(async (queries: string, concurrency: string, options) => {
+    const cli = new CLI();
+    const logger = new Logger();
+    const cacheController = new CacheController(logger, cli);
+    const test = new BulkTestRunner(
+      queries,
+      concurrency,
+      logger,
+      cli,
+      cacheController
+    );
+
+    if (options.verbose) {
+      logger.log("INFO", "Modo verboso ativado");
+    }
+
+    if (options.skipMigration) {
+      logger.log("WARN", "Migração de cache será pulada");
+    }
+
+    await test.run();
+  });
+
+program.parse();
