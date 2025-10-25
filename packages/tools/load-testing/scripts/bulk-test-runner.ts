@@ -88,8 +88,8 @@ class BulkTestRunner {
     this.logger.log("WARN", "Arquivo de queries não encontrado. Gerando...");
 
     try {
-      const generatorPath = path.join(__dirname, "query-generator.js");
-      const command = `node "${generatorPath}" ${this.queryCount}`;
+      const generatorPath = path.join(__dirname, "query-generator.ts");
+      const command = `tsx "${generatorPath}" ${this.queryCount}`;
 
       await this.cli.execCommand(command);
 
@@ -239,8 +239,14 @@ class BulkTestRunner {
       100
     ).toFixed(1);
 
+    // Criar barra de progresso visual
+    const barWidth = 40;
+    const filledWidth = Math.floor((this.completedQueries / this.totalQueries) * barWidth);
+    const emptyWidth = barWidth - filledWidth;
+    const progressBar = '-'.repeat(filledWidth) + ' '.repeat(emptyWidth);
+
     process.stdout.write(
-      `\r\x1b[35m[PROGRESS]\x1b[0m Queries: ${this.completedQueries}/${this.totalQueries} (${progress}%) | Sucessos: ${successRate}% | Erros: ${this.errors}`
+      `\r\x1b[35m[PROGRESS]\x1b[0m [${progressBar}] ${progress}% | Queries: ${this.completedQueries}/${this.totalQueries} | Sucessos: ${successRate}% | Erros: ${this.errors}`
     );
 
     if (this.completedQueries === this.totalQueries) {
@@ -273,26 +279,38 @@ class BulkTestRunner {
     this.completedQueries = 0;
     this.errors = 0;
 
-    // Executar queries com controle de concorrência
-    const executeChunk = async (queryChunk: string[]) => {
-      const promises = queryChunk.map((query) => this.makeRequest(query));
-      const chunkResults = (await Promise.all(promises)) as Result[];
-      results.push(...chunkResults);
+    // Executar queries com controle de concorrência contínua
+    let queryIndex = 0;
+    const activePromises = new Set<Promise<void>>();
 
-      // Atualizar progresso após cada chunk
+    const executeNext = async () => {
+      if (queryIndex >= this.queries.length) {
+        return;
+      }
+
+      const currentQuery = this.queries[queryIndex];
+      queryIndex++;
+
+      const result = (await this.makeRequest(currentQuery)) as Result;
+      results.push(result);
       this.updateProgress();
+
+      // Executar próxima query
+      if (queryIndex < this.queries.length) {
+        const nextPromise = executeNext();
+        activePromises.add(nextPromise);
+        await nextPromise;
+        activePromises.delete(nextPromise);
+      }
     };
 
-    // Dividir queries em chunks baseados na concorrência
-    const chunks = [];
-    for (let i = 0; i < this.queries.length; i += this.concurrency) {
-      chunks.push(this.queries.slice(i, i + this.concurrency));
+    // Iniciar execução com o número de queries simultâneas definido pela concorrência
+    const initialPromises = [];
+    for (let i = 0; i < Math.min(this.concurrency, this.queries.length); i++) {
+      initialPromises.push(executeNext());
     }
 
-    // Executar chunks sequencialmente
-    for (const chunk of chunks) {
-      await executeChunk(chunk);
-    }
+    await Promise.all(initialPromises);
 
     const totalTime = Date.now() - startTime;
 
