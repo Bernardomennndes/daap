@@ -138,26 +138,6 @@ services:
       - "traefik.http.services.search-service.loadbalancer.healthcheck.path=/health"
       - "traefik.http.services.search-service.loadbalancer.healthcheck.interval=${HEALTH_CHECK_INTERVAL:-30}s"
 
-  # Web Interface
-  web:
-    container_name: daap-web
-    build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
-    restart: always
-    environment:
-      - NEXT_PUBLIC_API_URL=${REVIEWS_EXTERNAL_URL:-http://reviews.localhost}
-      - DEBUG=${DEBUG:-false}
-    depends_on:
-      - reviews-service
-    networks:
-      - app_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`daap.localhost`)"
-      - "traefik.http.routers.web.service=web-service"
-      - "traefik.http.services.web-service.loadbalancer.server.port=${WEB_PORT:-3000}"
-
 volumes:
   mongodb_data:
 
