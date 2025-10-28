@@ -61,4 +61,40 @@ export class DragonflyAdapter
   async flush(): Promise<void> {
     await this.client.flushdb();
   }
+
+  // Implementação dos métodos LFU - Sorted Sets
+  async zadd(key: string, score: number, member: string): Promise<void> {
+    await this.client.zadd(key, score, member);
+  }
+
+  async zincrby(key: string, increment: number, member: string): Promise<number> {
+    const result = await this.client.zincrby(key, increment, member);
+    return parseFloat(result);
+  }
+
+  async zrevrange(key: string, start: number, stop: number): Promise<string[]> {
+    return await this.client.zrevrange(key, start, stop);
+  }
+
+  async zrange(key: string, start: number, stop: number): Promise<string[]> {
+    return await this.client.zrange(key, start, stop);
+  }
+
+  // Implementação dos métodos LFU - Sets
+  async sadd(key: string, ...members: string[]): Promise<number> {
+    return await this.client.sadd(key, ...members);
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    return await this.client.smembers(key);
+  }
+
+  async srem(key: string, ...members: string[]): Promise<number> {
+    return await this.client.srem(key, ...members);
+  }
+
+  // Métodos auxiliares
+  async keys(pattern: string): Promise<string[]> {
+    return await this.client.keys(pattern);
+  }
 }

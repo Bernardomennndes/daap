@@ -3,6 +3,7 @@ import {
   Get,
   Query,
   Delete,
+  Post,
   HttpCode,
   HttpStatus,
 } from "@nestjs/common";
@@ -55,5 +56,30 @@ export class CacheController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async invalidateCache(@Query("q") query?: string) {
     await this.cacheService.invalidate(query);
+  }
+
+  // Novos endpoints para LFU
+
+  @Get("stats/keywords")
+  async getKeywordStatistics(@Query("limit") limit: string = "50") {
+    const limitNum = parseInt(limit, 10) || 50;
+    const stats = await this.cacheService.getKeywordStatistics(limitNum);
+    
+    return {
+      total: stats.length,
+      keywords: stats
+    };
+  }
+
+  @Get("stats/info")
+  async getCacheInfo() {
+    return await this.cacheService.getCacheInfo();
+  }
+
+  @Post("evict")
+  @HttpCode(HttpStatus.OK)
+  async manualEviction(@Query("count") count: string = "10") {
+    const countNum = parseInt(count, 10) || 10;
+    return await this.cacheService.manualEviction(countNum);
   }
 }

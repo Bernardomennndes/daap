@@ -4,6 +4,8 @@ import { CacheAdapter } from './adapter';
 import { RedisAdapter } from './implementations/redis.adapter';
 import { DragonflyAdapter } from './implementations/dragonfly.adapter';
 import { CacheConfig } from './types';
+import { KeywordService } from './keyword.service';
+import { LFUManager } from './lfu-manager.service';
 
 @Module({
   providers: [
@@ -29,7 +31,10 @@ import { CacheConfig } from './types';
       },
       inject: [ConfigService],
     },
+    KeywordService,
+    LFUManager,
   ],
-  exports: [CacheAdapter],
+  exports: [CacheAdapter, KeywordService, LFUManager],
 })
 export class CacheModule {}
+
