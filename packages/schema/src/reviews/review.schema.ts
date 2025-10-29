@@ -41,10 +41,17 @@ export type ReviewDocument = Review & Document;
 export const ReviewSchema = SchemaFactory.createForClass(Review);
 
 // Create text index for full-text search
-// ReviewSchema.index(
-//   { reviewText: "text", summary: "text" },
-//   { default_language: "english" }
-// );
+ReviewSchema.index(
+  { reviewText: "text", summary: "text" },
+  {
+    default_language: "english",
+    weights: {
+      reviewText: 10,  // Higher weight for review text
+      summary: 5       // Lower weight for summary
+    },
+    name: "text_search_index"
+  }
+);
 
 // Add a compound index for performance optimization
 // ReviewSchema.index(

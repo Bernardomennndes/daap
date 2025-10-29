@@ -60,10 +60,14 @@ exports.Review = Review = __decorate([
 ], Review);
 exports.ReviewSchema = mongoose_1.SchemaFactory.createForClass(Review);
 // Create text index for full-text search
-// ReviewSchema.index(
-//   { reviewText: "text", summary: "text" },
-//   { default_language: "english" }
-// );
+exports.ReviewSchema.index({ reviewText: "text", summary: "text" }, {
+    default_language: "english",
+    weights: {
+        reviewText: 10, // Higher weight for review text
+        summary: 5 // Lower weight for summary
+    },
+    name: "text_search_index"
+});
 // Add a compound index for performance optimization
 // ReviewSchema.index(
 //   { reviewerID: 1, asin: 1 },
