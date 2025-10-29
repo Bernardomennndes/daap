@@ -9,6 +9,7 @@
     "start:dev": "turbo run start:dev --filter=@daap/cache-service --filter=@daap/reviews-service --filter=@daap/search-service",
     "start:services": "turbo run start --filter=@daap/cache-service --filter=@daap/reviews-service --filter=@daap/search-service",
     "build:services": "turbo run build --filter=@daap/cache-service --filter=@daap/reviews-service --filter=@daap/search-service",
+    "db:create-indexes": "bash scripts/create-text-indexes.sh",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
