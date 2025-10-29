@@ -13,7 +13,8 @@ export class SearchService {
   async search(query: string, page = 1, size = 10) {
     const skip = (page - 1) * size;
 
-    const sanitizedQuery = query.trim().replace(/[^a-zA-Z0-9\s]/g, "");
+    // Validate and sanitize query (minimal sanitization for MongoDB Text Search)
+    const sanitizedQuery = query.trim();
     if (!sanitizedQuery) {
       return { items: [], total: 0 };
     }
@@ -23,22 +24,17 @@ export class SearchService {
       return { items: [], total: 0 };
     }
 
-    // Create regex pattern for case-insensitive search
-    const regexPattern = new RegExp(sanitizedQuery, "i");
-    
-    // Build search criteria using $or to search in multiple fields
+    // Use MongoDB Text Search with text index
+    // Searches across reviewText and summary fields (as defined in schema)
     const searchCriteria = {
-      $or: [
-        { reviewText: { $regex: regexPattern } },
-        { summary: { $regex: regexPattern } },
-        { reviewerName: { $regex: regexPattern } },
-        { category: { $regex: regexPattern } }
-      ]
+      $text: { $search: sanitizedQuery }
     };
 
+    // Query with text score for relevance sorting
     const [items, total] = await Promise.all([
       this.reviewModel
-        .find(searchCriteria)
+        .find(searchCriteria, { score: { $meta: "textScore" } })
+        .sort({ score: { $meta: "textScore" } })
         .skip(skip)
         .limit(size)
         .exec(),

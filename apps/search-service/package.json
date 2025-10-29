@@ -18,26 +18,28 @@
     "preset": "@daap/jest-presets/node"
   },
   "dependencies": {
+    "@daap/schema": "workspace:*",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^11.0.0",
     "@nestjs/mongoose": "^11.0.0",
-    "@nestjs/config": "^3.1.1",
     "mongoose": "^8.0.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
-    "@daap/schema": "workspace:*"
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@daap/eslint-config": "workspace:*",
     "@daap/jest-presets": "workspace:*",
     "@daap/typescript-config": "workspace:*",
-    "@types/node": "^20.11.24",
-    "eslint": "^8.57.0",
-    "typescript": "~5.4.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
-    "ts-node": "^10.9.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.11.24",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
     "nodemon": "^3.0.0",
-    "jest": "^29.7.0"
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.4.0"
   }
 }
