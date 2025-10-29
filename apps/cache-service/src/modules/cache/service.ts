@@ -2,14 +2,14 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import { CacheAdapter } from "../../lib/cache/adapter";
 import { SearchResult, CacheEntry } from "../../lib/cache/types";
 import { KeywordService } from "../../lib/cache/keyword.service";
-import { LFUManager } from "../../lib/cache/lfu-manager.service";
+import { EvictionStrategy } from "../../lib/cache/eviction-strategy.interface";
 
 @Injectable()
 export class CacheService implements OnModuleInit {
   constructor(
     private readonly cacheAdapter: CacheAdapter,
     private readonly keywordService: KeywordService,
-    private readonly lfuManager: LFUManager
+    private readonly evictionStrategy: EvictionStrategy
   ) {}
 
   onModuleInit() {}
@@ -39,8 +39,8 @@ export class CacheService implements OnModuleInit {
         return null;
       }
 
-      // Registra acesso para LFU
-      await this.lfuManager.recordAccess(key);
+      // Registra acesso para estratégia de eviction
+      await this.evictionStrategy.recordAccess(key);
 
       return entry.data;
     } catch (error) {
@@ -73,15 +73,15 @@ export class CacheService implements OnModuleInit {
     const entryStr = JSON.stringify(entry);
     await this.cacheAdapter.set(key, entryStr, ttl);
 
-    // Registra no LFU manager
-    await this.lfuManager.registerCacheEntry(
+    // Registra na estratégia de eviction
+    await this.evictionStrategy.registerCacheEntry(
       key,
       keywords,
       entryStr.length
     );
 
     // Verifica se precisa fazer eviction
-    await this.lfuManager.checkAndEvict();
+    await this.evictionStrategy.checkAndEvict();
   }
 
   async invalidate(query?: string): Promise<void> {
@@ -93,8 +93,8 @@ export class CacheService implements OnModuleInit {
     } else {
       // Remove todo o cache
       await this.cacheAdapter.flush();
-      // Limpa estruturas LFU
-      await this.lfuManager.clearAll();
+      // Limpa estruturas da estratégia de eviction
+      await this.evictionStrategy.clearAll();
     }
   }
 
@@ -103,18 +103,18 @@ export class CacheService implements OnModuleInit {
     return await this.cacheAdapter.exists(key);
   }
 
-  // Novos métodos para estatísticas e gerenciamento LFU
+  // Métodos para estatísticas e gerenciamento de eviction
   async getKeywordStatistics(limit: number = 50) {
-    return await this.lfuManager.getKeywordStats(limit);
+    return await this.evictionStrategy.getKeywordStats(limit);
   }
 
   async getCacheInfo() {
-    return await this.lfuManager.getCacheInfo();
+    return await this.evictionStrategy.getCacheInfo();
   }
 
   async manualEviction(count: number) {
-    const candidates = await this.lfuManager.findEntriesForEviction(count);
-    await this.lfuManager.evict(candidates);
+    const candidates = await this.evictionStrategy.findEntriesForEviction(count);
+    await this.evictionStrategy.evict(candidates);
     return {
       evicted: candidates.length,
       candidates: candidates.map(c => ({

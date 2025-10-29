@@ -5,7 +5,8 @@ import { RedisAdapter } from './implementations/redis.adapter';
 import { DragonflyAdapter } from './implementations/dragonfly.adapter';
 import { CacheConfig } from './types';
 import { KeywordService } from './keyword.service';
-import { LFUManager } from './lfu-manager.service';
+import { EvictionStrategy } from './eviction-strategy.interface';
+import { LFUStrategy, LRUStrategy, HybridStrategy } from './strategies';
 
 @Module({
   providers: [
@@ -32,9 +33,29 @@ import { LFUManager } from './lfu-manager.service';
       inject: [ConfigService],
     },
     KeywordService,
-    LFUManager,
+    {
+      provide: EvictionStrategy,
+      useFactory: (
+        cacheAdapter: CacheAdapter,
+        keywordService: KeywordService,
+        configService: ConfigService
+      ) => {
+        const strategyType = configService.get<string>('EVICTION_STRATEGY', 'lfu');
+
+        switch (strategyType.toLowerCase()) {
+          case 'lru':
+            return new LRUStrategy(cacheAdapter, keywordService, configService);
+          case 'hybrid':
+            return new HybridStrategy(cacheAdapter, keywordService, configService);
+          case 'lfu':
+          default:
+            return new LFUStrategy(cacheAdapter, keywordService, configService);
+        }
+      },
+      inject: [CacheAdapter, KeywordService, ConfigService],
+    },
   ],
-  exports: [CacheAdapter, KeywordService, LFUManager],
+  exports: [CacheAdapter, KeywordService, EvictionStrategy],
 })
 export class CacheModule {}
 

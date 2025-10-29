@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DAAP is a university project demonstrating **distributed microservices architecture** with **intelligent LFU (Least Frequently Used) caching**. The system implements search over product reviews with a custom cache layer that combines frequency-based eviction + temporal scoring to achieve **99.9% performance improvement** (8ms vs 7580ms avg response time).
+DAAP is a university project demonstrating **distributed microservices architecture** with **intelligent cache eviction strategies**. The system implements search over product reviews with a custom cache layer that supports three pluggable eviction strategies (LFU, LRU, Hybrid) to achieve **99.9% performance improvement** (8ms vs 7580ms avg response time).
 
-**Key Innovation**: Keyword-based cache tracking with pluggable backends (Redis/Dragonfly) and resilient fallback chains.
+**Key Innovation**: Keyword-based cache tracking with pluggable backends (Redis/Dragonfly), **pluggable eviction strategies**, and resilient fallback chains.
 
 ## Technology Stack
 
@@ -39,14 +39,14 @@ Redis/Dragonfly    Search Service (Port 3003)
 **Request Path**:
 1. Reviews Service receives `/search?q={query}`
 2. Delegates to Cache Service at `http://cache-service:3002/search`
-3. Cache Service checks Redis/Dragonfly via **LFU Manager**
-4. **Cache Hit**: Returns cached data + increments frequency + updates lastAccess
+3. Cache Service checks Redis/Dragonfly via **Eviction Strategy** (LFU/LRU/Hybrid)
+4. **Cache Hit**: Returns cached data + records access (strategy-dependent)
 5. **Cache Miss**: Fetches from Search Service → MongoDB, stores in cache, triggers eviction check
 
 **Why This Design?**
 - **Cache Service Isolation**: Swap backends (Redis ↔ Dragonfly) without touching other services
+- **Pluggable Eviction Strategies**: Switch between LFU, LRU, or Hybrid via environment variable
 - **Fallback Resilience**: Reviews Service has direct fallback to Search Service ([reviews-service/src/modules/search/service.ts:32-51](apps/reviews-service/src/modules/search/service.ts#L32-L51))
-- **LFU + Temporal Scoring**: Evicts entries based on `score = 1/(freq+1) + age*0.1` (low frequency + old = evict first)
 - **Keyword Tracking**: Enables granular analytics and invalidation
 
 ### Services Detail
@@ -84,9 +84,14 @@ Located in `packages/`:
 - `@daap/jest-presets`: Jest configuration for node environment
 - `@daap/tools`: **Load testing scripts** (bulk-test-runner, benchmark-analyzer, keyword-analyzer)
 
-## LFU Cache Implementation (Core Algorithm)
+## Cache Eviction Strategies (Pluggable Architecture)
 
-**Eviction Score Formula** ([lfu-manager.service.ts:188-194](apps/cache-service/src/lib/cache/lfu-manager.service.ts#L188-L194)):
+O sistema suporta **três estratégias de eviction** intercambiáveis via configuração:
+
+### 1. **LFU (Least Frequently Used)** - Padrão
+Remove entries com menor frequência de acesso.
+
+**Eviction Score Formula** ([strategies/lfu.strategy.ts](apps/cache-service/src/lib/cache/strategies/lfu.strategy.ts)):
 ```typescript
 const timeSinceAccess = Date.now() - metadata.lastAccess;
 const ageInHours = timeSinceAccess / (1000 * 60 * 60);
@@ -97,10 +102,52 @@ const score = (1 / (metadata.frequency + 1)) + (ageInHours * 0.1);
 - Entry with `freq=1, age=24h` → `score = 0.5 + 2.4 = 2.9` (high → evict)
 - Entry with `freq=99, age=1h` → `score = 0.01 + 0.1 = 0.11` (low → keep)
 
-**When Eviction Happens** ([lfu-manager.service.ts:271-293](apps/cache-service/src/lib/cache/lfu-manager.service.ts#L271-L293)):
+### 2. **LRU (Least Recently Used)**
+Remove entries com acesso mais antigo (ignora frequência).
+
+**Eviction Score Formula** ([strategies/lru.strategy.ts](apps/cache-service/src/lib/cache/strategies/lru.strategy.ts)):
+```typescript
+const timeSinceAccess = Date.now() - metadata.lastAccess;
+const score = timeSinceAccess; // Milissegundos desde último acesso
+```
+
+**Logic**: Maior tempo sem acesso = evict primeiro
+
+### 3. **Hybrid (LFU + LRU)**
+Combina frequência e recência com pesos configuráveis.
+
+**Eviction Score Formula** ([strategies/hybrid.strategy.ts](apps/cache-service/src/lib/cache/strategies/hybrid.strategy.ts)):
+```typescript
+const frequencyScore = 1 / (metadata.frequency + 1);
+const ageInHours = (Date.now() - metadata.lastAccess) / (1000 * 60 * 60);
+const recencyScore = ageInHours * 0.1;
+
+const score =
+  (frequencyWeight * frequencyScore) +
+  (recencyWeight * recencyScore);
+```
+
+**Pesos padrão**: 60% frequência, 40% recência (configurável via env)
+
+### Alternando Estratégias
+
+```bash
+# No .env
+EVICTION_STRATEGY=lfu     # ou lru, hybrid
+EVICTION_MAX_ENTRIES=1000
+EVICTION_BATCH_SIZE=50
+
+# Para Hybrid, ajustar pesos
+EVICTION_FREQUENCY_WEIGHT=0.6
+EVICTION_RECENCY_WEIGHT=0.4
+```
+
+**Documentação completa**: [apps/cache-service/EVICTION_STRATEGIES.md](apps/cache-service/EVICTION_STRATEGIES.md)
+
+**When Eviction Happens**:
 - Automatically after **every** `.set()` call via `checkAndEvict()`
-- Triggers when `countCacheEntries() > LFU_MAX_ENTRIES` (default: 1000)
-- Removes in batches: `LFU_EVICTION_BATCH_SIZE` (default: 50)
+- Triggers when `countCacheEntries() > EVICTION_MAX_ENTRIES` (default: 1000)
+- Removes in batches: `EVICTION_BATCH_SIZE` (default: 50)
 
 **Keyword Extraction** ([keyword.service.ts](apps/cache-service/src/lib/cache/keyword.service.ts)):
 - Query `"laptop screen protector"` → keywords `["laptop", "screen", "protector"]`
