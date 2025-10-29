@@ -93,6 +93,7 @@ class SingleFileComparison extends CacheResultComparison {
     // Processar queries
     const results = [];
     let totalDefault = 0;
+    let totalCount = 0;
     let totalRedis = 0;
     let totalDragonfly = 0;
     let redisCount = 0;
@@ -100,10 +101,12 @@ class SingleFileComparison extends CacheResultComparison {
 
     logger.logSeparator("Processando Queries");
 
-    for (let i = 0; i < Math.min(testData.results.length, 10); i++) { // Limitar a 10 para demo
+    for (let i = 0; i < testData.results.length; i++) { // Limitar a 10 para demo
       const result = testData.results[i];
-      
-      process.stdout.write(`\r🔍 Query ${i + 1}/10: "${result.query.substring(0, 30)}${result.query.length > 30 ? '...' : ''}"`);
+
+      if (result.cached) continue; // Pular queries em cache
+
+      process.stdout.write(`\r🔍 Query ${i + 1}/${testData.results.length}: "${result.query.substring(0, 30)}${result.query.length > 30 ? '...' : ''}"`);
 
       let redisTime = null;
       let dragonflyTime = null;
@@ -125,6 +128,7 @@ class SingleFileComparison extends CacheResultComparison {
       }
 
       totalDefault += result.responseTime;
+      totalCount++;
 
       results.push({
         Query: result.query.substring(0, 30) + (result.query.length > 30 ? '...' : ''),
@@ -132,18 +136,16 @@ class SingleFileComparison extends CacheResultComparison {
         'Redis (ms)': redisTime || 'N/A',
         'Dragonfly (ms)': dragonflyTime || 'N/A'
       });
-
-      await new Promise(resolve => setTimeout(resolve, 50)); // Pausa pequena
     }
 
     console.log(''); // Nova linha
 
     // Mostrar resultados
     logger.logSeparator("Resultados das Consultas");
-    logger.logTable(results, "Performance Comparison (Primeiras 10 queries)");
+    logger.logTable(results.slice(0, 10), "Performance Comparison");
 
     // Calcular e mostrar médias
-    const avgDefault = Math.round(totalDefault / Math.min(testData.results.length, 10));
+    const avgDefault = Math.round(totalDefault / totalCount);
     const avgRedis = redisCount > 0 ? Math.round(totalRedis / redisCount) : null;
     const avgDragonfly = dragonflyCount > 0 ? Math.round(totalDragonfly / dragonflyCount) : null;
 
