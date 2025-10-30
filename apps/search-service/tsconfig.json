@@ -2,9 +2,9 @@
   "extends": "@daap/typescript-config/api.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "baseUrl": "./"
   },
-  "exclude": ["node_modules"],
-  "include": ["src"]
+  "exclude": ["node_modules", "dist"],
+  "include": ["."]
 }

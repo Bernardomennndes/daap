@@ -29,4 +29,4 @@ RUN adduser --system --uid 1001 nextjs
 USER nextjs
 COPY --from=installer /app .
 
-CMD ["node", "apps/search-service/dist/main.js"]
+CMD ["node", "apps/search-service/dist/src/main.js"]
