@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import natural from 'natural';
 
 @Injectable()
 export class KeywordService {
+  // ✅ SOLUÇÃO 3: Porter Stemmer para normalização morfológica
+  private readonly stemmer = natural.PorterStemmer;
+
   private readonly stopWords = new Set([
     // English stop words
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
@@ -30,8 +34,16 @@ export class KeywordService {
   private readonly minKeywordLength = 3;
 
   /**
-   * Extrai keywords relevantes de uma query
-   * Remove stop words, pontuação e normaliza o texto
+   * ✅ SOLUÇÃO 3: Aplica stemming para normalizar variações morfológicas
+   * Ex: "laptops" → "laptop", "charging" → "charg"
+   */
+  private stemWord(word: string): string {
+    return this.stemmer.stem(word);
+  }
+
+  /**
+   * Extrai keywords relevantes de uma query com stemming aplicado
+   * Remove stop words, pontuação, normaliza e aplica stemming
    */
   extractKeywords(query: string): string[] {
     if (!query || typeof query !== 'string') {
@@ -43,10 +55,11 @@ export class KeywordService {
       .replace(/[^\w\sàáâãèéêìíòóôõùúç]/g, ' ') // Remove pontuação, mantém acentos
       .split(/\s+/)
       .map(word => word.trim())
-      .filter(word => 
-        word.length >= this.minKeywordLength && 
+      .filter(word =>
+        word.length >= this.minKeywordLength &&
         !this.stopWords.has(word)
       )
+      .map(word => this.stemWord(word))  // ✅ APLICA STEMMING
       .filter((word, index, self) => self.indexOf(word) === index); // Remove duplicatas
   }
 

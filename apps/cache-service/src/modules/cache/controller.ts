@@ -82,4 +82,9 @@ export class CacheController {
     const countNum = parseInt(count, 10) || 10;
     return await this.cacheService.manualEviction(countNum);
   }
+
+  @Get("metrics/hit-types")
+  async getCacheMetrics() {
+    return await this.cacheService.getCacheMetrics();
+  }
 }

@@ -11,6 +11,12 @@ export interface SearchResult {
   total: number;
   page: number;
   size: number;
+  source?: string;
+  _cacheMetadata?: {
+    fuzzyMatch?: boolean;
+    similarity?: number;
+    originalKey?: string;
+  };
 }
 
 export interface CacheEntry {

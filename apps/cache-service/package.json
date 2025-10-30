@@ -18,15 +18,16 @@
     "preset": "@daap/jest-presets/node"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/config": "^3.1.1",
-    "@nestjs/axios": "^3.0.0",
-    "@daap/schema": "workspace:*",
     "@daap/logger": "workspace:*",
+    "@daap/schema": "workspace:*",
+    "@nestjs/axios": "^3.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/core": "^11.0.0",
     "axios": "^1.8.4",
-    "redis": "^5.1.0",
     "ioredis": "^5.3.2",
+    "natural": "^8.1.0",
+    "redis": "^5.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -34,13 +35,14 @@
     "@daap/eslint-config": "workspace:*",
     "@daap/jest-presets": "workspace:*",
     "@daap/typescript-config": "workspace:*",
-    "@types/node": "^20.11.24",
-    "eslint": "^8.57.0",
-    "typescript": "~5.4.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
+    "@types/natural": "^6.0.1",
+    "@types/node": "^20.11.24",
     "esbuild-register": "^3.5.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
     "nodemon": "^3.0.0",
-    "jest": "^29.7.0"
+    "typescript": "~5.4.0"
   }
 }
