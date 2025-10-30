@@ -54,6 +54,27 @@ services:
     networks:
       - app_network
 
+  # OpenTelemetry & Observability
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: daap-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+      - "14250:14250"  # Jaeger gRPC (legacy)
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=info
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Reviews Service (Escalável)
   reviews-service:
     build:
@@ -68,10 +89,15 @@ services:
       - REDIS_URL=${REDIS_URL}
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      - OTEL_SERVICE_NAME=reviews-service
+      - OTEL_TRACES_SAMPLER=${OTEL_TRACES_SAMPLER:-always_on}
+      - NODE_ENV=${NODE_ENV:-development}
     depends_on:
       - mongodb
       - cache-service
       - redis
+      - jaeger
     networks:
       - app_network
     labels:
@@ -101,10 +127,15 @@ services:
       - CACHE_SERVICE_PORT=${CACHE_SERVICE_PORT:-3002}
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      - OTEL_SERVICE_NAME=cache-service
+      - OTEL_TRACES_SAMPLER=${OTEL_TRACES_SAMPLER:-always_on}
+      - NODE_ENV=${NODE_ENV:-development}
     depends_on:
       - redis
       - dragonfly
       - search-service
+      - jaeger
     networks:
       - app_network
     labels:
@@ -126,8 +157,13 @@ services:
       - SEARCH_SERVICE_PORT=${SEARCH_SERVICE_PORT:-3003}
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      - OTEL_SERVICE_NAME=search-service
+      - OTEL_TRACES_SAMPLER=${OTEL_TRACES_SAMPLER:-always_on}
+      - NODE_ENV=${NODE_ENV:-development}
     depends_on:
       - mongodb
+      - jaeger
     networks:
       - app_network
     labels:

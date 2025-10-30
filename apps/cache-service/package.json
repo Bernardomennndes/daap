@@ -20,6 +20,7 @@
   "dependencies": {
     "@daap/logger": "workspace:*",
     "@daap/schema": "workspace:*",
+    "@daap/telemetry": "workspace:*",
     "@nestjs/axios": "^3.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.1.1",

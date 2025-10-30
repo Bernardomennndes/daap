@@ -1,3 +1,6 @@
+// ⚠️ SEMPRE PRIMEIRO IMPORT - Inicializa OpenTelemetry antes de tudo
+import "./tracing";
+
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { MainModule } from "./main.module";

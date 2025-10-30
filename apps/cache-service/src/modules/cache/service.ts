@@ -3,6 +3,17 @@ import { CacheAdapter } from "../../lib/cache/adapter";
 import { SearchResult, CacheEntry } from "../../lib/cache/types";
 import { KeywordService } from "../../lib/cache/keyword.service";
 import { EvictionStrategy } from "../../lib/cache/eviction-strategy.interface";
+import {
+  getTracingService,
+  CACHE_QUERY,
+  CACHE_PAGE,
+  CACHE_SIZE,
+  CACHE_KEY,
+  CACHE_HIT,
+  CACHE_HIT_TYPE,
+  CACHE_FUZZY_SIMILARITY,
+  KEYWORD_COUNT,
+} from '@daap/telemetry';
 
 interface FuzzyMatchCandidate {
   key: string;
@@ -13,6 +24,7 @@ interface FuzzyMatchCandidate {
 @Injectable()
 export class CacheService implements OnModuleInit {
   private readonly logger = new Logger(CacheService.name);
+  private readonly tracing = getTracingService('cache-service');
 
   // ✅ SOLUÇÃO 2: Configurações de Fuzzy Matching
   private readonly FUZZY_ENABLED = process.env.ENABLE_FUZZY_CACHE === 'true';
@@ -61,31 +73,64 @@ export class CacheService implements OnModuleInit {
     page: number,
     size: number
   ): Promise<SearchResult | null> {
-    const startTime = Date.now();
+    return this.tracing.startActiveSpan(
+      'cache.get',
+      async (span) => {
+        span.setAttributes({
+          [CACHE_QUERY]: query,
+          [CACHE_PAGE]: page,
+          [CACHE_SIZE]: size,
+        });
 
-    // NÍVEL 1: Busca normalizada (com stemming)
-    const key = this.generateCacheKey(query, page, size);
-    const cached = await this.cacheAdapter.get(key);
+        const startTime = Date.now();
 
-    if (cached) {
-      const result = await this.parseCacheEntry(cached, key);
-      if (result) {
-        this.logCacheHit('normalized', Date.now() - startTime);
-        return result;
+        // NÍVEL 1: Busca normalizada (com stemming)
+        const key = this.generateCacheKey(query, page, size);
+        const cached = await this.tracing.startActiveSpan(
+          'cache.lookup.normalized',
+          async (lookupSpan) => {
+            lookupSpan.setAttributes({ [CACHE_KEY]: key });
+            const result = await this.cacheAdapter.get(key);
+            lookupSpan.setAttributes({ [CACHE_HIT]: !!result });
+            return result;
+          }
+        );
+
+        if (cached) {
+          const result = await this.parseCacheEntry(cached, key);
+          if (result) {
+            span.setAttributes({ [CACHE_HIT_TYPE]: 'normalized' });
+            this.logCacheHit('normalized', Date.now() - startTime);
+            return result;
+          }
+        }
+
+        // NÍVEL 2: Fuzzy matching (se habilitado)
+        if (this.FUZZY_ENABLED) {
+          const fuzzyResult = await this.tracing.startActiveSpan(
+            'cache.lookup.fuzzy',
+            async (fuzzySpan) => {
+              const result = await this.findPartialMatch(query, page, size);
+              fuzzySpan.setAttributes({
+                [CACHE_HIT]: !!result,
+                [CACHE_FUZZY_SIMILARITY]: result?._cacheMetadata?.similarity || 0,
+              });
+              return result;
+            }
+          );
+
+          if (fuzzyResult) {
+            span.setAttributes({ [CACHE_HIT_TYPE]: 'fuzzy' });
+            this.logCacheHit('fuzzy', Date.now() - startTime);
+            return fuzzyResult;
+          }
+        }
+
+        span.setAttributes({ [CACHE_HIT_TYPE]: 'miss' });
+        this.logCacheHit('miss', Date.now() - startTime);
+        return null;
       }
-    }
-
-    // NÍVEL 2: Fuzzy matching (se habilitado)
-    if (this.FUZZY_ENABLED) {
-      const fuzzyResult = await this.findPartialMatch(query, page, size);
-      if (fuzzyResult) {
-        this.logCacheHit('fuzzy', Date.now() - startTime);
-        return fuzzyResult;
-      }
-    }
-
-    this.logCacheHit('miss', Date.now() - startTime);
-    return null;
+    );
   }
 
   /**
@@ -249,31 +294,40 @@ export class CacheService implements OnModuleInit {
     data: SearchResult,
     ttl: number = 4 * 24 * 60 * 60 // 4 dias
   ): Promise<void> {
-    const key = this.generateCacheKey(query, page, size);
-    
-    // Extrai keywords da query
-    const keywords = this.keywordService.extractKeywords(query);
-    
-    const entry: CacheEntry = {
-      data,
-      timestamp: Date.now(),
-      ttl,
-      keywords,
-      frequency: 1
-    };
+    return this.tracing.startActiveSpan('cache.set', async (span) => {
+      const key = this.generateCacheKey(query, page, size);
 
-    const entryStr = JSON.stringify(entry);
-    await this.cacheAdapter.set(key, entryStr, ttl);
+      // Extrai keywords da query
+      const keywords = this.keywordService.extractKeywords(query);
 
-    // Registra na estratégia de eviction
-    await this.evictionStrategy.registerCacheEntry(
-      key,
-      keywords,
-      entryStr.length
-    );
+      span.setAttributes({
+        [CACHE_KEY]: key,
+        [KEYWORD_COUNT]: keywords.length,
+      });
 
-    // Verifica se precisa fazer eviction
-    await this.evictionStrategy.checkAndEvict();
+      const entry: CacheEntry = {
+        data,
+        timestamp: Date.now(),
+        ttl,
+        keywords,
+        frequency: 1
+      };
+
+      const entryStr = JSON.stringify(entry);
+      await this.cacheAdapter.set(key, entryStr, ttl);
+
+      // Registra na estratégia de eviction
+      await this.evictionStrategy.registerCacheEntry(
+        key,
+        keywords,
+        entryStr.length
+      );
+
+      // Verifica se precisa fazer eviction
+      await this.tracing.startActiveSpan('cache.eviction.check', async () => {
+        await this.evictionStrategy.checkAndEvict();
+      });
+    });
   }
 
   async invalidate(query?: string): Promise<void> {
