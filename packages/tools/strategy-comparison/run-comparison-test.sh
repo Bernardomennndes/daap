@@ -19,10 +19,11 @@ echo ""
 # Função para rodar teste com uma estratégia
 run_test() {
   local strategy=$1
+  local strategy_upper=$(echo "$strategy" | tr '[:lower:]' '[:upper:]')
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "Testing ${strategy^^} Strategy"
+  echo "Testing ${strategy_upper} Strategy"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
 
