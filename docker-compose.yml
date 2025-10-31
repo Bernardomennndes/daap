@@ -130,6 +130,26 @@ services:
       timeout: 10s
       retries: 3
 
+  # InfluxDB v1.8 - Time Series Database for k6 metrics (v1.8 for k6 compatibility)
+  influxdb:
+    image: influxdb:1.8
+    container_name: daap-influxdb
+    restart: unless-stopped
+    ports:
+      - "${INFLUXDB_PORT:-8086}:8086"
+    environment:
+      - INFLUXDB_DB=${INFLUXDB_DB:-k6}
+      - INFLUXDB_HTTP_AUTH_ENABLED=false
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "influx", "-execute", "SHOW DATABASES"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Reviews Service (Escalável)
   reviews-service:
     build:
@@ -234,6 +254,10 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  influxdb_data:
+    driver: local
+  influxdb_config:
     driver: local
 
 networks:

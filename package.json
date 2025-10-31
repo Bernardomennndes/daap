@@ -16,7 +16,15 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:integration": "node scripts/test-integration.js"
+    "test:integration": "node scripts/test-integration.js",
+    "k6:install": "docker pull grafana/k6:0.49.0",
+    "k6:test": "bash scripts/run-k6-test.sh",
+    "k6:test:stress": "bash scripts/run-k6-test.sh --script cache-stress-test.js",
+    "k6:test:lfu": "bash scripts/run-k6-test.sh --strategy lfu",
+    "k6:test:lru": "bash scripts/run-k6-test.sh --strategy lru",
+    "k6:test:hybrid": "bash scripts/run-k6-test.sh --strategy hybrid",
+    "k6:compare": "bash scripts/run-k6-strategy-comparison.sh",
+    "k6:clean": "rm -rf packages/tools/k6/results/*.json packages/tools/k6/results/*.html packages/tools/k6/results/*.txt"
   },
   "devDependencies": {
     "prettier": "^3.2.5",

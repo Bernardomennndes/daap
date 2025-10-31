@@ -1,0 +1,53 @@
+{
+  "popular": [
+    "laptop",
+    "phone",
+    "charger",
+    "cable",
+    "battery",
+    "screen protector",
+    "case",
+    "adapter",
+    "mouse",
+    "keyboard",
+    "headphones",
+    "speaker",
+    "camera",
+    "usb",
+    "wireless"
+  ],
+  "longTail": [
+    "laptop screen protector 15 inch",
+    "usb-c charger fast charging",
+    "wireless mouse ergonomic",
+    "bluetooth headphones noise cancelling",
+    "phone case waterproof",
+    "hdmi cable 4k 10 feet",
+    "portable battery pack 20000mah",
+    "mechanical keyboard rgb",
+    "webcam 1080p streaming",
+    "external hard drive 2tb",
+    "laptop stand adjustable",
+    "usb hub 3.0 powered",
+    "phone holder car mount",
+    "wireless earbuds",
+    "gaming mouse rgb"
+  ],
+  "uniqueWords": [
+    "laptop",
+    "phone",
+    "charger",
+    "cable",
+    "wireless",
+    "usb",
+    "adapter",
+    "battery",
+    "screen",
+    "case",
+    "bluetooth",
+    "hdmi",
+    "portable",
+    "external",
+    "gaming"
+  ]
+}
