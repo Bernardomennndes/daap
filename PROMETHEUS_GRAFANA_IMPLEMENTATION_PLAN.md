@@ -5,16 +5,32 @@
 
 ## ✅ STATUS ATUAL (Implementado)
 
-### Fase 1: Infraestrutura Base (COMPLETO)
+### Fase 1: Infraestrutura Base (COMPLETO ✅)
 - ✅ **Telemetry Package**: Módulos `metrics.ts` e `cache-metrics.ts` criados
 - ✅ **Dependências**: @opentelemetry/sdk-metrics, exporter-prometheus, host-metrics
 - ✅ **prometheus.yml**: Configuração de scrape dos 3 serviços
+
+### Fase 2: Instrumentação de Serviços (COMPLETO ✅)
+- ✅ **Cache Service main.ts**: `initializeMetrics()` adicionado
+- ✅ **Cache Service service.ts**: `CacheMetricsService` instanciado com gauge callbacks
+- ✅ **LFU Strategy**: Métricas de eviction registradas
+- ✅ **LRU Strategy**: Métricas de eviction registradas
+- ✅ **Hybrid Strategy**: Métricas de eviction registradas
+- ✅ **Reviews Service main.ts**: `initializeMetrics()` adicionado
+- ✅ **Search Service main.ts**: `initializeMetrics()` adicionado
+- ✅ **Build e testes**: Todos os serviços compilam com sucesso
+
+### Fase 3: Prometheus Docker (COMPLETO ✅)
+- ✅ **docker-compose.yml**: Service `prometheus` adicionado
+- ✅ **Volume prometheus_data**: Criado para persistência
+- ✅ **Environment variables**: Configurações adicionadas ao `.env.example`
+- ✅ **Health checks**: Endpoint de saúde configurado
 
 ---
 
 ## 🚧 PRÓXIMAS ETAPAS (Pendentes)
 
-### FASE 2: Instrumentar Serviços (2-3 horas)
+### ~~FASE 2: Instrumentar Serviços~~ (COMPLETO ✅)
 
 #### 2.1. Cache Service
 
@@ -515,18 +531,18 @@ open http://localhost:3000/d/cache-strategy-comparison
 - [x] Criar cache-metrics.ts
 - [x] Criar prometheus.yml
 
-### Fase 2: Instrumentação ⏳ (PENDENTE)
-- [ ] Instrumentar Cache Service main.ts
-- [ ] Instrumentar Cache Service service.ts
-- [ ] Instrumentar estratégias de eviction
-- [ ] Instrumentar Reviews Service
-- [ ] Instrumentar Search Service
-- [ ] Build e testar todos os serviços
+### Fase 2: Instrumentação ✅ (COMPLETO)
+- [x] Instrumentar Cache Service main.ts
+- [x] Instrumentar Cache Service service.ts
+- [x] Instrumentar estratégias de eviction
+- [x] Instrumentar Reviews Service
+- [x] Instrumentar Search Service
+- [x] Build e testar todos os serviços
 
-### Fase 3: Prometheus Docker ⏳ (PENDENTE)
-- [ ] Adicionar service ao docker-compose.yml
-- [ ] Adicionar volume prometheus_data
-- [ ] Testar scrape dos 3 serviços
+### Fase 3: Prometheus Docker ✅ (COMPLETO)
+- [x] Adicionar service ao docker-compose.yml
+- [x] Adicionar volume prometheus_data
+- [x] Atualizar .env.example com variáveis Prometheus
 
 ### Fase 4: Grafana Setup ⏳ (PENDENTE)
 - [ ] Adicionar service ao docker-compose.yml
@@ -544,9 +560,9 @@ open http://localhost:3000/d/cache-strategy-comparison
 - [ ] Atualizar prometheus.yml com rule_files
 - [ ] Testar alertas
 
-### Fase 7: Environment ⏳ (PENDENTE)
-- [ ] Atualizar .env.example
-- [ ] Documentar variáveis
+### Fase 7: Environment ✅ (COMPLETO)
+- [x] Atualizar .env.example
+- [x] Documentar variáveis
 
 ### Fase 8: Documentação ⏳ (PENDENTE)
 - [ ] Criar PROMETHEUS_GRAFANA_GUIDE.md
@@ -564,8 +580,8 @@ open http://localhost:3000/d/cache-strategy-comparison
 
 ---
 
-**Status**: Fase 1 completa, Fases 2-8 pendentes
-**Tempo Estimado Restante**: 4-5 horas
+**Status**: Fases 1-3 e 7 completas, Fases 4-6 e 8 pendentes
+**Tempo Estimado Restante**: 2-3 horas (Grafana dashboards + alertas + documentação)
 **Prioridade**: Alta (complementa sistema de tracing Jaeger)
 
 ---
