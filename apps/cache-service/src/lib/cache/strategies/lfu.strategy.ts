@@ -9,6 +9,24 @@ import {
   KeywordStats,
   EvictionCandidate
 } from '../types';
+import {
+  getTracingService,
+  EVICTION_STRATEGY,
+  EVICTION_TRIGGERED,
+  EVICTION_ENTRIES_BEFORE,
+  EVICTION_ENTRIES_AFTER,
+  EVICTION_THRESHOLD,
+  EVICTION_BATCH_SIZE,
+  EVICTION_EXCESS_COUNT,
+  EVICTION_CANDIDATES_COUNT,
+  EVICTION_SCORE_AVG,
+  EVICTION_SCORE_MIN,
+  EVICTION_SCORE_MAX,
+  EVICTION_ENTRIES_EVICTED,
+  EVICTION_DURATION_MS,
+  EVICTION_UTILIZATION_BEFORE,
+  EVICTION_UTILIZATION_AFTER,
+} from '@daap/telemetry';
 
 /**
  * Implementação da estratégia LFU (Least Frequently Used)
@@ -17,6 +35,7 @@ import {
 @Injectable()
 export class LFUStrategy extends EvictionStrategy {
   private readonly logger = new Logger(LFUStrategy.name);
+  private readonly tracing = getTracingService('cache-service');
   private readonly config: LFUConfig;
 
   // Prefixos para chaves Redis
@@ -258,31 +277,79 @@ export class LFUStrategy extends EvictionStrategy {
   }
 
   async checkAndEvict(): Promise<boolean> {
-    try {
-      const currentCount = await this.countCacheEntries();
+    return this.tracing.startActiveSpan('cache.eviction.check', async (span) => {
+      try {
+        const startTime = Date.now();
+        const currentCount = await this.countCacheEntries();
 
-      if (currentCount > this.config.maxEntries) {
-        const excessCount = currentCount - this.config.maxEntries;
-        const evictionCount = Math.min(
-          excessCount + this.config.evictionBatchSize,
-          this.config.evictionBatchSize
-        );
+        span.setAttributes({
+          [EVICTION_STRATEGY]: this.getStrategyName(),
+          [EVICTION_ENTRIES_BEFORE]: currentCount,
+          [EVICTION_THRESHOLD]: this.config.maxEntries,
+          [EVICTION_TRIGGERED]: currentCount > this.config.maxEntries,
+        });
 
-        this.logger.warn(
-          `Cache limit exceeded: ${currentCount}/${this.config.maxEntries}. ` +
-          `Evicting ${evictionCount} entries...`
-        );
+        if (currentCount > this.config.maxEntries) {
+          const excessCount = currentCount - this.config.maxEntries;
+          const evictionCount = Math.min(
+            excessCount + this.config.evictionBatchSize,
+            this.config.evictionBatchSize
+          );
 
-        const candidates = await this.findEntriesForEviction(evictionCount);
-        await this.evict(candidates);
-        return true;
+          span.setAttributes({
+            [EVICTION_BATCH_SIZE]: evictionCount,
+            [EVICTION_EXCESS_COUNT]: excessCount,
+          });
+
+          this.logger.warn(
+            `Cache limit exceeded: ${currentCount}/${this.config.maxEntries}. ` +
+            `Evicting ${evictionCount} entries...`
+          );
+
+          const candidates = await this.findEntriesForEviction(evictionCount);
+
+          // Calcula estatísticas de scores
+          if (candidates.length > 0) {
+            const scores = candidates.map(c => c.score);
+            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const minScore = Math.min(...scores);
+            const maxScore = Math.max(...scores);
+
+            span.setAttributes({
+              [EVICTION_CANDIDATES_COUNT]: candidates.length,
+              [EVICTION_SCORE_AVG]: avgScore,
+              [EVICTION_SCORE_MIN]: minScore,
+              [EVICTION_SCORE_MAX]: maxScore,
+            });
+          }
+
+          await this.evict(candidates);
+
+          const afterCount = await this.countCacheEntries();
+          const duration = Date.now() - startTime;
+
+          span.setAttributes({
+            [EVICTION_ENTRIES_AFTER]: afterCount,
+            [EVICTION_ENTRIES_EVICTED]: currentCount - afterCount,
+            [EVICTION_DURATION_MS]: duration,
+            [EVICTION_UTILIZATION_BEFORE]: (currentCount / this.config.maxEntries) * 100,
+            [EVICTION_UTILIZATION_AFTER]: (afterCount / this.config.maxEntries) * 100,
+          });
+
+          span.addEvent('eviction_completed', {
+            entries_removed: currentCount - afterCount,
+            duration_ms: duration,
+          });
+
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        this.logger.error(`Error in checkAndEvict: ${error}`);
+        throw error; // TracingService captura automaticamente
       }
-
-      return false;
-    } catch (error) {
-      this.logger.error(`Error in checkAndEvict: ${error}`);
-      return false;
-    }
+    });
   }
 
   async getKeywordStats(limit: number = 50): Promise<KeywordStats[]> {

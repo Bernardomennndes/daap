@@ -565,6 +565,76 @@ this.tracing.startActiveSpan('operation', async (span) => {
 
 ---
 
+## Strategy Comparison Tool
+
+**Location**: [packages/tools/strategy-comparison/](packages/tools/strategy-comparison/)
+
+Ferramenta automatizada para comparar as três estratégias de eviction (LFU, LRU, Hybrid) através de métricas coletadas via **OpenTelemetry + Jaeger**.
+
+### **Quick Start**
+
+```bash
+# Rodar teste automatizado completo (testa as 3 estratégias sequencialmente)
+./packages/tools/strategy-comparison/run-comparison-test.sh 5000 10
+
+# Argumentos:
+#   $1: Número de requests por estratégia (default: 5000)
+#   $2: Concurrency (default: 10)
+
+# Tempo estimado: ~20-30 minutos
+```
+
+**Output**:
+- `packages/tools/results/comparison-report-*.md` - Relatório Markdown
+- `packages/tools/results/comparison-report-*.csv` - Relatório CSV
+- `packages/tools/results/traces/` - JSONs brutos do Jaeger
+
+### **Métricas Coletadas**
+
+Por estratégia:
+- Total de evictions executadas
+- Duração média/min/max/P50/P95/P99 (ms)
+- Entries evictadas (média/total)
+- Score médio das entries evictadas
+- Utilização antes/depois (%)
+- Eficiência (entries/ms)
+
+### **Workflow Manual**
+
+```bash
+# 1. Rodar testes com estratégia específica
+echo "EVICTION_STRATEGY=lfu" >> .env
+docker-compose up -d --build cache-service
+cd packages/tools/load-testing
+pnpm test:bulk 5000 10
+
+# 2. Coletar traces do Jaeger
+cd ../strategy-comparison
+npx ts-node jaeger-collector.ts lfu 1 1000
+
+# 3. Gerar relatório comparativo (após coletar todas as estratégias)
+npx ts-node compare-strategies.ts 1
+```
+
+### **Visualização no Jaeger UI**
+
+```
+http://localhost:16686
+
+Filtros úteis:
+- Service: cache-service
+- Operation: cache.eviction.check
+- Tags: eviction.strategy=lfu (ou lru, hybrid)
+- Tags: eviction.triggered=true (apenas evictions reais)
+```
+
+### **Documentação Completa**
+
+- [README completo](packages/tools/strategy-comparison/README.md)
+- [Troubleshooting & Advanced Usage](packages/tools/strategy-comparison/README.md#troubleshooting)
+
+---
+
 ## Development Commands
 
 ### Quick Start (First Time)
