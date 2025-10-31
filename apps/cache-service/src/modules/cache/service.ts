@@ -5,6 +5,7 @@ import { KeywordService } from "../../lib/cache/keyword.service";
 import { EvictionStrategy } from "../../lib/cache/eviction-strategy.interface";
 import {
   getTracingService,
+  CacheMetricsService,
   CACHE_QUERY,
   CACHE_PAGE,
   CACHE_SIZE,
@@ -25,6 +26,7 @@ interface FuzzyMatchCandidate {
 export class CacheService implements OnModuleInit {
   private readonly logger = new Logger(CacheService.name);
   private readonly tracing = getTracingService('cache-service');
+  private readonly metrics = new CacheMetricsService('cache-service');
 
   // ✅ SOLUÇÃO 2: Configurações de Fuzzy Matching
   private readonly FUZZY_ENABLED = process.env.ENABLE_FUZZY_CACHE === 'true';
@@ -39,7 +41,18 @@ export class CacheService implements OnModuleInit {
     private readonly cacheAdapter: CacheAdapter,
     private readonly keywordService: KeywordService,
     private readonly evictionStrategy: EvictionStrategy
-  ) {}
+  ) {
+    // Registrar callbacks para Observable Gauges
+    this.metrics.registerEntriesGaugeCallback(async (strategy) => {
+      const info = await this.evictionStrategy.getCacheInfo();
+      return info.strategyName.toLowerCase() === strategy ? info.totalEntries : 0;
+    });
+
+    this.metrics.registerUtilizationGaugeCallback(async (strategy) => {
+      const info = await this.evictionStrategy.getCacheInfo();
+      return info.strategyName.toLowerCase() === strategy ? info.utilizationPercentage : 0;
+    });
+  }
 
   onModuleInit() {
     this.logger.log(
@@ -99,8 +112,16 @@ export class CacheService implements OnModuleInit {
         if (cached) {
           const result = await this.parseCacheEntry(cached, key);
           if (result) {
+            const strategy = this.evictionStrategy.getStrategyName().toLowerCase();
+            const duration = (Date.now() - startTime) / 1000;
+
             span.setAttributes({ [CACHE_HIT_TYPE]: 'normalized' });
             this.logCacheHit('normalized', Date.now() - startTime);
+
+            // Registrar métricas Prometheus
+            this.metrics.recordRequest(strategy, 'normalized');
+            this.metrics.recordOperationDuration('get', strategy, duration);
+
             return result;
           }
         }
@@ -120,14 +141,31 @@ export class CacheService implements OnModuleInit {
           );
 
           if (fuzzyResult) {
+            const strategy = this.evictionStrategy.getStrategyName().toLowerCase();
+            const duration = (Date.now() - startTime) / 1000;
+
             span.setAttributes({ [CACHE_HIT_TYPE]: 'fuzzy' });
             this.logCacheHit('fuzzy', Date.now() - startTime);
+
+            // Registrar métricas Prometheus
+            this.metrics.recordRequest(strategy, 'fuzzy');
+            this.metrics.recordOperationDuration('get', strategy, duration);
+
             return fuzzyResult;
           }
         }
 
+        // Cache miss
+        const strategy = this.evictionStrategy.getStrategyName().toLowerCase();
+        const duration = (Date.now() - startTime) / 1000;
+
         span.setAttributes({ [CACHE_HIT_TYPE]: 'miss' });
         this.logCacheHit('miss', Date.now() - startTime);
+
+        // Registrar métricas Prometheus
+        this.metrics.recordRequest(strategy, 'miss');
+        this.metrics.recordOperationDuration('get', strategy, duration);
+
         return null;
       }
     );

@@ -11,6 +11,7 @@ import {
 } from '../types';
 import {
   getTracingService,
+  CacheMetricsService,
   EVICTION_STRATEGY,
   EVICTION_TRIGGERED,
   EVICTION_ENTRIES_BEFORE,
@@ -36,6 +37,7 @@ import {
 export class LRUStrategy extends EvictionStrategy {
   private readonly logger = new Logger(LRUStrategy.name);
   private readonly tracing = getTracingService('cache-service');
+  private metrics: CacheMetricsService | null = null;
   private readonly config: LFUConfig;
 
   // Prefixos para chaves Redis
@@ -57,6 +59,13 @@ export class LRUStrategy extends EvictionStrategy {
       keywordMinLength: 3,
       stopWords: []
     };
+
+    // Inicializar Prometheus metrics (silently fail se não disponível)
+    try {
+      this.metrics = new CacheMetricsService('cache-service');
+    } catch (error) {
+      this.logger.warn('Prometheus metrics not initialized');
+    }
 
     this.logger.log(`LRU Strategy initialized with max entries: ${this.config.maxEntries}`);
   }
@@ -312,19 +321,28 @@ export class LRUStrategy extends EvictionStrategy {
 
           const afterCount = await this.countCacheEntries();
           const duration = Date.now() - startTime;
+          const entriesEvicted = currentCount - afterCount;
 
           span.setAttributes({
             [EVICTION_ENTRIES_AFTER]: afterCount,
-            [EVICTION_ENTRIES_EVICTED]: currentCount - afterCount,
+            [EVICTION_ENTRIES_EVICTED]: entriesEvicted,
             [EVICTION_DURATION_MS]: duration,
             [EVICTION_UTILIZATION_BEFORE]: (currentCount / this.config.maxEntries) * 100,
             [EVICTION_UTILIZATION_AFTER]: (afterCount / this.config.maxEntries) * 100,
           });
 
           span.addEvent('eviction_completed', {
-            entries_removed: currentCount - afterCount,
+            entries_removed: entriesEvicted,
             duration_ms: duration,
           });
+
+          // Registrar métricas Prometheus
+          if (this.metrics) {
+            const strategy = this.getStrategyName().toLowerCase();
+            this.metrics.recordEviction(strategy);
+            this.metrics.recordEvictionDuration(strategy, duration / 1000);
+            this.metrics.recordEvictionEntriesRemoved(strategy, entriesEvicted);
+          }
 
           return true;
         }

@@ -9,11 +9,19 @@ import { HttpStatus, ValidationPipe } from "@nestjs/common";
 import { TracingInterceptor } from "./interceptors/logger/http-tracing.interceptor";
 import { ILoggerService } from "./lib/modules/global/logger/adapter";
 import { ISecretsService } from "./lib/modules/global/secrets/adapter";
+import { initializeMetrics } from "@daap/telemetry";
 
 const NAME = "DAAP";
 const VERSION = "1.0.0";
 
 async function bootstrap() {
+  // Inicializar Prometheus metrics
+  initializeMetrics({
+    serviceName: "reviews-service",
+    port: 9464,
+    endpoint: "/metrics",
+  });
+
   const app = await NestFactory.create<NestExpressApplication>(MainModule, {
     bufferLogs: true,
     cors: true,

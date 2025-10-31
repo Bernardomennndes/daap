@@ -5,9 +5,17 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { MainModule } from "./main.module";
 import { SecretsService } from "./lib/modules/global/secrets/service";
+import { initializeMetrics } from "@daap/telemetry";
 
 async function bootstrap() {
   try {
+    // Inicializar Prometheus metrics
+    initializeMetrics({
+      serviceName: "cache-service",
+      port: 9464,
+      endpoint: "/metrics",
+    });
+
     const app = await NestFactory.create(MainModule, {
       logger: ["error", "warn", "log", "verbose", "debug"],
     });
