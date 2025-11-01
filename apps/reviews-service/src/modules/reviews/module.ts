@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 // import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { getConnectionToken } from "@nestjs/mongoose";
 import { TokenModule } from "src/lib/modules/auth/token/module";
-import { RedisModule } from "src/lib/modules/cache/module";
 import { ConnectionName } from "src/lib/modules/database/enum";
 import { HttpModule } from "src/lib/modules/http/module";
 // import { IsLoggedMiddleware } from 'libs/utils/middleware/auth/is-logged.middleware';
@@ -14,7 +13,7 @@ import { ReviewsRepository } from "./repository";
 import { ReviewDocument, Reviews, ReviewSchema } from "./schema";
 
 @Module({
-  imports: [TokenModule, HttpModule, RedisModule],
+  imports: [TokenModule, HttpModule],
   controllers: [ReviewsController],
   providers: [
     {
