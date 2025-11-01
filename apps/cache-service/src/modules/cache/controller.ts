@@ -7,11 +7,21 @@ import {
   HttpCode,
   HttpStatus,
 } from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
+import { ConfigService } from "@nestjs/config";
+import { firstValueFrom } from "rxjs";
 import { CacheService } from "./service";
+import { getTracingService } from '@daap/telemetry';
 
 @Controller("cache")
 export class CacheController {
-  constructor(private readonly cacheService: CacheService) {}
+  private readonly tracing = getTracingService('cache-service');
+
+  constructor(
+    private readonly cacheService: CacheService,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Get("search")
   async getCachedSearch(
@@ -22,20 +32,65 @@ export class CacheController {
     const pageNum = parseInt(page, 10) || 1;
     const sizeNum = parseInt(size, 10) || 10;
 
+    // Try to get from cache
     const cached = await this.cacheService.get(query, pageNum, sizeNum);
 
     if (cached) {
       return {
-        source: "cache",
         ...cached,
+        source: "cache",
       };
     }
 
-    return {
-      source: "cache",
-      data: null,
-      message: "No cached data found",
-    };
+    // Cache miss - delegate to Search Service
+    return this.tracing.startActiveSpan(
+      'http.client.search_service',
+      async (span) => {
+        span.setAttributes({
+          'http.method': 'GET',
+          'http.target': '/search',
+          'peer.service': 'search-service',
+          'search.query': query,
+        });
+
+        try {
+          const searchServiceUrl = this.configService.get('SEARCH_SERVICE_URL', 'http://search-service:3003');
+          const response = await firstValueFrom(
+            this.httpService.get(`${searchServiceUrl}/search`, {
+              params: { q: query, page: pageNum, size: sizeNum },
+              timeout: 60000,
+            })
+          );
+
+          const searchResult = {
+            ...response.data,
+            page: pageNum,
+            size: sizeNum,
+            source: "search",
+          };
+
+          // Save to cache for future requests
+          try {
+            await this.cacheService.set(
+              query,
+              pageNum,
+              sizeNum,
+              searchResult,
+              parseInt(this.configService.get('CACHE_TTL', '345600'), 10) // 4 days default
+            );
+          } catch (cacheError) {
+            console.error("Failed to save to cache:", cacheError);
+          }
+
+          return searchResult;
+        } catch (error) {
+          span.setAttributes({
+            'http.status_code': (error as any).response?.status || 500,
+          });
+          throw error;
+        }
+      }
+    );
   }
 
   @Get("exists")
