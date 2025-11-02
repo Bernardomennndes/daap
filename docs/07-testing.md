@@ -258,7 +258,7 @@ describe('SearchService Database Integration', () => {
 
     expect(result.items.length).toBeLessThanOrEqual(10);
     expect(result.total).toBeGreaterThan(0);
-    expect(result.items[0]).toHaveProperty('reviewText');
+    expect(result.items[0]).toHaveProperty('description');
   });
 
   it('should return empty results for nonsensical query', async () => {

@@ -49,12 +49,12 @@ async function createTextIndexes() {
     const startTime = Date.now();
 
     await collection.createIndex(
-      { reviewText: "text", summary: "text" },
+      { title: "text", description: "text" },
       {
         default_language: "english",
         weights: {
-          reviewText: 10,
-          summary: 5
+          description: 10,
+          title: 5
         },
         name: "text_search_index"
       }
@@ -89,7 +89,7 @@ async function createTextIndexes() {
       if (testResult.length > 0) {
         console.log('✓ Index is working correctly');
         console.log('  Sample match:', {
-          summary: testResult[0].summary?.substring(0, 50) + '...',
+          title: testResult[0].title?.substring(0, 50) + '...',
           score: testResult[0].score
         });
       } else {

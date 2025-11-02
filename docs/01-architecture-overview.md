@@ -191,7 +191,7 @@ All services instrumented with:
 ### Database
 - **MongoDB**: NoSQL document database
   - Full-text search (`$text` operator)
-  - Text indexes on `reviewText` and `summary` fields
+  - Text indexes on `title` and `description` fields
   - Mongoose ODM for schema validation
 
 ### Cache Backends

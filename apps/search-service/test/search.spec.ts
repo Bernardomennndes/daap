@@ -155,8 +155,8 @@ describe('SearchService - MongoDB Text Search', () => {
   describe('Results Handling', () => {
     it('should return items and total count', async () => {
       const mockItems = [
-        { reviewText: 'Great laptop', summary: 'Excellent', score: 1.5 },
-        { reviewText: 'Good laptop', summary: 'Nice', score: 1.2 },
+        { title: 'Excellent', description: 'Great laptop', score: 1.5 },
+        { title: 'Nice', description: 'Good laptop', score: 1.2 },
       ];
 
       mockReviewModel.exec.mockResolvedValue(mockItems);
