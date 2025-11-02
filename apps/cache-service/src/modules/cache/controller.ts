@@ -32,15 +32,20 @@ export class CacheController {
     const pageNum = parseInt(page, 10) || 1;
     const sizeNum = parseInt(size, 10) || 10;
 
+    console.log(`[Cache Service] Received search request: q="${query}", page=${pageNum}, size=${sizeNum}`);
+
     // Try to get from cache
     const cached = await this.cacheService.get(query, pageNum, sizeNum);
 
     if (cached) {
+      console.log(`[Cache Service] Cache HIT for query: "${query}"`);
       return {
         ...cached,
         source: "cache",
       };
     }
+
+    console.log(`[Cache Service] Cache MISS for query: "${query}" - delegating to Search Service`);
 
     // Cache miss - delegate to Search Service
     return this.tracing.startActiveSpan(

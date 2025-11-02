@@ -19,15 +19,20 @@ export class SearchService {
   ) {}
 
   async search(query: string, page: number = 1, size: number = 10): Promise<SearchResult> {
+    console.log(`[Reviews Service] Received search request: q="${query}", page=${page}, size=${size}`);
+
     try {
       const cacheServiceUrl = this.configService.get('CACHE_SERVICE_URL', 'http://localhost:3002');
+      console.log(`[Reviews Service] Calling Cache Service: ${cacheServiceUrl}/cache/search`);
+
       const response = await firstValueFrom(
-        this.httpService.get(`${cacheServiceUrl}/search`, {
+        this.httpService.get(`${cacheServiceUrl}/cache/search`, {
           params: { q: query, page, size },
           timeout: 60000
         })
       );
 
+      console.log(`[Reviews Service] Cache Service responded with source: ${response.data.source}`);
       return response.data;
     } catch (error) {
       console.warn('Cache service failed, falling back to search service directly:', error.message);
