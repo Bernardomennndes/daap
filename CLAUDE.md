@@ -71,8 +71,8 @@ Redis/Dragonfly    Search Service (Port 3003)
 3. **Search Service** ([apps/search-service/](apps/search-service/))
    - **Role**: MongoDB full-text search backend
    - **Port**: 3003 (exposed as `http://search.localhost`)
-   - **Query**: Uses `$text` search on `reviewText` and `summary` fields
-   - **Note**: Text indexes commented out in schema (see [review.schema.ts:44-58](packages/schema/src/reviews/review.schema.ts#L44-L58))
+   - **Query**: Uses `$text` search on `title` and `description` fields
+   - **Note**: Text indexes defined in schema (see [review.schema.ts:16-27](packages/schema/src/reviews/review.schema.ts#L16-L27))
 
 ### Shared Packages
 
@@ -726,6 +726,29 @@ pnpm test:integration
 ```
 
 **Load testing** (critical for cache validation):
+
+**k6 Load Testing** (Modern, recommended):
+```bash
+# Default test: 15min load test with electronics queries
+pnpm k6:test
+
+# Test with game soundtracks context
+QUERY_CONTEXT=game_soundtracks pnpm k6:test
+
+# Stress test to trigger eviction
+pnpm k6:test:stress
+
+# Compare all eviction strategies (LFU, LRU, Hybrid)
+pnpm k6:compare
+
+# Custom test with specific context and strategy
+./scripts/run-k6-test.sh --context game_soundtracks --strategy hybrid
+
+# Results: packages/tools/k6/results/
+# Dashboards: http://localhost:3000 (Grafana)
+```
+
+**Legacy Load Testing** (TypeScript-based):
 ```bash
 cd packages/tools/load-testing
 
@@ -740,6 +763,13 @@ pnpm compare:cache
 
 # Results saved to: packages/tools/load-testing/results/
 ```
+
+**Query Contexts** (k6 only):
+The k6 tests support contextual query datasets for domain-specific testing:
+- `electronics` (default): Laptops, phones, chargers
+- `game_soundtracks`: Zelda, Mario, Final Fantasy
+
+Add new contexts in [`packages/tools/k6/data/query-contexts.json`](packages/tools/k6/data/query-contexts.json)
 
 ### Linting & Formatting
 
@@ -1047,21 +1077,16 @@ GET http://search.localhost/search?q={query}&page={page}&size={size}
 
 ### Review Schema (MongoDB)
 
+**Simplified Schema** - The system uses a minimal, flexible schema that can adapt to any review dataset:
+
 ```typescript
 interface Review {
-  reviewerID: string;
-  asin: string;           // Product ID (Amazon Standard ID)
-  reviewerName: string;
-  helpful: number[];      // [helpful_votes, total_votes]
-  reviewText: string;     // Full review text (searchable)
-  overall: number;        // Rating 1-5
-  summary: string;        // Review title (searchable)
-  unixReviewTime: number;
-  reviewTime: string;     // Human-readable date
-  category: string;
-  class: number;
+  title: string;        // Review title (searchable, weight: 5)
+  description: string;  // Main review content (searchable, weight: 10)
 }
 ```
+
+**Design Philosophy**: The schema intentionally uses only `title` and `description` fields to make the system adaptable to any review dataset structure. Data preprocessing should map source fields to these two fields before import.
 
 ## Troubleshooting
 
@@ -1138,7 +1163,7 @@ Cache limit exceeded: 1050/1000. Evicting 50 entries...
 docker exec -it daap-mongodb mongosh -u admin -p admin --authenticationDatabase admin
 > use daap
 > db.reviews.countDocuments()  # Should be > 0
-> db.reviews.find({reviewText: /laptop/i}).limit(1)  # Regex search works
+> db.reviews.find({description: /laptop/i}).limit(1)  # Regex search works
 ```
 
 ### Build Issues

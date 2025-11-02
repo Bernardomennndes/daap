@@ -1,6 +1,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Gauge, Trend } from 'k6/metrics';
+import { loadQueryContext, getContextName } from '../lib/query-loader.js';
 
 // ============================================================
 // CUSTOM METRICS
@@ -39,14 +40,19 @@ export const options = {
     test_type: 'cache_stress_test',
     environment: __ENV.NODE_ENV || 'development',
     eviction_strategy: __ENV.EVICTION_STRATEGY || 'lfu',
+    query_context: __ENV.QUERY_CONTEXT || 'electronics',
   },
 
   summaryTrendStats: ['min', 'avg', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
 };
 
 // ============================================================
-// CONSTANTS
+// CONSTANTS & CONFIGURATION
 // ============================================================
+
+// Load query context for context-aware stress testing
+const QUERY_CONTEXT = __ENV.QUERY_CONTEXT || 'electronics';
+loadQueryContext(QUERY_CONTEXT);
 
 const BASE_URL = __ENV.BASE_URL || 'http://reviews-service:3001';
 const CACHE_URL = __ENV.CACHE_URL || 'http://cache-service:3002';
@@ -59,6 +65,7 @@ export function setup() {
   console.log('💪 Starting k6 Cache Stress Test');
   console.log(`📊 Target: Trigger cache eviction under heavy load`);
   console.log(`🔧 Eviction Strategy: ${__ENV.EVICTION_STRATEGY || 'lfu'}`);
+  console.log(`📚 Query Context: ${getContextName()}`);
   console.log('');
 
   // Health check
@@ -94,7 +101,8 @@ export function setup() {
 
 export default function () {
   // Generate unique query to force cache misses and fill cache
-  const uniqueQuery = `stress-test-${__VU}-${__ITER}-${Date.now()}`;
+  // Prefix with context name for better traceability
+  const uniqueQuery = `stress-test-${QUERY_CONTEXT}-${__VU}-${__ITER}-${Date.now()}`;
   uniqueQueriesGenerated.add(1);
 
   const url = `${BASE_URL}/search?q=${encodeURIComponent(uniqueQuery)}&page=1&size=10`;

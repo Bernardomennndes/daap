@@ -1,6 +1,14 @@
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import { Counter, Trend, Rate, Gauge } from "k6/metrics";
+import {
+  loadQueryContext,
+  getPopularQueries,
+  getLongTailQueries,
+  generateRandomQuery,
+  randomElement,
+  getContextName,
+} from "../lib/query-loader.js";
 
 // ============================================================
 // CUSTOM METRICS
@@ -75,45 +83,23 @@ export const options = {
     test_type: "cache_load_test",
     environment: __ENV.NODE_ENV || "development",
     eviction_strategy: __ENV.EVICTION_STRATEGY || "lfu",
+    query_context: __ENV.QUERY_CONTEXT || "electronics",
   },
 
   summaryTrendStats: ["min", "avg", "med", "max", "p(90)", "p(95)", "p(99)"],
 };
 
 // ============================================================
-// TEST DATA
+// TEST DATA & CONFIGURATION
 // ============================================================
 
-const POPULAR_QUERIES = [
-  "laptop",
-  "phone",
-  "charger",
-  "cable",
-  "battery",
-  "screen protector",
-  "case",
-  "adapter",
-  "mouse",
-  "keyboard",
-  "headphones",
-  "speaker",
-  "camera",
-  "usb",
-  "wireless",
-];
+// Load query context (default: electronics, configurable via QUERY_CONTEXT env var)
+const QUERY_CONTEXT = __ENV.QUERY_CONTEXT || "electronics";
+const queryContext = loadQueryContext(QUERY_CONTEXT);
 
-const LONG_TAIL_QUERIES = [
-  "laptop screen protector 15 inch",
-  "usb-c charger fast charging",
-  "wireless mouse ergonomic",
-  "bluetooth headphones noise cancelling",
-  "phone case waterproof",
-  "hdmi cable 4k 10 feet",
-  "portable battery pack 20000mah",
-  "mechanical keyboard rgb",
-  "webcam 1080p streaming",
-  "external hard drive 2tb",
-];
+// Get queries from loaded context
+const POPULAR_QUERIES = getPopularQueries();
+const LONG_TAIL_QUERIES = getLongTailQueries();
 
 const BASE_URL = __ENV.BASE_URL || "http://reviews-service:3001";
 const CACHE_URL = __ENV.CACHE_URL || "http://cache-service:3002";
@@ -121,24 +107,7 @@ const CACHE_URL = __ENV.CACHE_URL || "http://cache-service:3002";
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
-
-function randomElement(array) {
-  return array[Math.floor(Math.random() * array.length)];
-}
-
-function generateRandomQuery() {
-  const words = [
-    "laptop",
-    "phone",
-    "charger",
-    "cable",
-    "wireless",
-    "usb",
-    "adapter",
-  ];
-  const count = Math.floor(Math.random() * 3) + 1;
-  return Array.from({ length: count }, () => randomElement(words)).join(" ");
-}
+// Note: randomElement and generateRandomQuery are imported from query-loader.js
 
 function recordMetrics(response, queryType) {
   try {
@@ -229,6 +198,9 @@ export function setup() {
   }
 
   console.log("✅ Health checks passed");
+  console.log(`📚 Query Context: ${getContextName()}`);
+  console.log(`   - Popular queries: ${POPULAR_QUERIES.length}`);
+  console.log(`   - Long-tail queries: ${LONG_TAIL_QUERIES.length}`);
 
   // Flush cache before test
   const flushResponse = http.del(`${CACHE_URL}/cache/invalidate`);

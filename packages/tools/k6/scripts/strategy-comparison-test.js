@@ -2,6 +2,12 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js';
+import {
+  loadQueryContext,
+  getPopularQueries,
+  randomElement,
+  getContextName,
+} from '../lib/query-loader.js';
 
 // ============================================================
 // CUSTOM METRICS (Strategy-specific)
@@ -38,19 +44,21 @@ export const options = {
     test_type: 'strategy_comparison',
     environment: __ENV.NODE_ENV || 'development',
     eviction_strategy: strategy,
+    query_context: __ENV.QUERY_CONTEXT || 'electronics',
   },
 
   summaryTrendStats: ['min', 'avg', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
 };
 
 // ============================================================
-// TEST DATA
+// TEST DATA & CONFIGURATION
 // ============================================================
 
-const QUERIES = [
-  'laptop', 'phone', 'charger', 'cable', 'battery',
-  'mouse', 'keyboard', 'headphones', 'speaker', 'camera'
-];
+// Load query context and get first 10 popular queries for high cache hit rate
+const QUERY_CONTEXT = __ENV.QUERY_CONTEXT || 'electronics';
+loadQueryContext(QUERY_CONTEXT);
+const allPopular = getPopularQueries();
+const QUERIES = allPopular.slice(0, 10); // Use first 10 for high repetition
 
 const BASE_URL = __ENV.BASE_URL || 'http://reviews-service:3001';
 const CACHE_URL = __ENV.CACHE_URL || 'http://cache-service:3002';
@@ -64,6 +72,7 @@ export function setup() {
   console.log('📊 Configuration:');
   console.log(`   Virtual Users: 50`);
   console.log(`   Duration: 5 minutes`);
+  console.log(`   Query Context: ${getContextName()}`);
   console.log(`   Queries: ${QUERIES.length} popular terms`);
   console.log('');
 
@@ -86,7 +95,7 @@ export function setup() {
 // ============================================================
 
 export default function () {
-  const query = QUERIES[Math.floor(Math.random() * QUERIES.length)];
+  const query = randomElement(QUERIES);
   const page = Math.floor(Math.random() * 2) + 1; // Pages 1-2
   const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&page=${page}&size=10`;
 

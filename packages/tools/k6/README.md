@@ -193,6 +193,106 @@ This will:
 
 ---
 
+## 🎭 Query Contexts
+
+The k6 tests support **contextual query datasets** to adapt testing to different review domains. This allows testing with realistic queries for different product categories.
+
+### Available Contexts
+
+#### 1. **Electronics** (Default)
+Queries for electronic product reviews (laptops, phones, chargers, etc.)
+
+```bash
+# Explicitly use electronics context
+./scripts/run-k6-test.sh --context electronics
+
+# Or via npm
+QUERY_CONTEXT=electronics pnpm k6:test
+```
+
+**Example queries**:
+- Popular: `laptop`, `phone`, `charger`, `wireless`, `usb`
+- Long-tail: `laptop screen protector 15 inch`, `usb-c charger fast charging`
+
+#### 2. **Game Soundtracks**
+Queries for video game music and soundtrack reviews
+
+```bash
+# Use game soundtracks context
+./scripts/run-k6-test.sh --context game_soundtracks
+
+# Or via npm
+QUERY_CONTEXT=game_soundtracks pnpm k6:test
+```
+
+**Example queries**:
+- Popular: `zelda`, `mario`, `final fantasy`, `skyrim`, `minecraft`
+- Long-tail: `zelda breath of wild soundtrack`, `final fantasy battle theme`
+
+### Query Distribution
+
+All tests use the following distribution (same across all contexts):
+
+- **70%** - Popular queries (high cache hit expected)
+- **20%** - Long-tail queries (medium cache hit)
+- **10%** - Unique generated queries (cache miss expected)
+
+### Adding New Contexts
+
+To add a new query context:
+
+1. **Edit** [`packages/tools/k6/data/query-contexts.json`](./data/query-contexts.json)
+
+2. **Add your context**:
+   ```json
+   {
+     "my_context": {
+       "name": "My Context Name",
+       "description": "Description of this context",
+       "popular": ["query1", "query2", "query3", ...],
+       "longTail": ["long query one", "long query two", ...],
+       "uniqueWords": ["word1", "word2", "word3", ...]
+     }
+   }
+   ```
+
+3. **Run tests**:
+   ```bash
+   ./scripts/run-k6-test.sh --context my_context
+   ```
+
+### Context-Aware Testing Examples
+
+**Test electronics with LFU**:
+```bash
+./scripts/run-k6-test.sh --context electronics --strategy lfu
+```
+
+**Test game soundtracks with Hybrid**:
+```bash
+./scripts/run-k6-test.sh --context game_soundtracks --strategy hybrid
+```
+
+**Stress test with soundtracks**:
+```bash
+./scripts/run-k6-test.sh --script cache-stress-test.js --context game_soundtracks
+```
+
+**Compare strategies with game soundtracks**:
+```bash
+# Set context before running comparison
+QUERY_CONTEXT=game_soundtracks pnpm k6:compare
+```
+
+### Benefits
+
+✅ **Domain-specific testing**: Test with realistic queries for your data
+✅ **Easy configuration**: Just pass `--context` flag
+✅ **Consistent structure**: Same test logic, different vocabulary
+✅ **Extensible**: Add new contexts without changing code
+
+---
+
 ## 📊 Viewing Results
 
 ### Grafana Dashboard

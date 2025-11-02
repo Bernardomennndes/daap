@@ -18,6 +18,7 @@ TEST_SCRIPT="cache-load-test.js"
 BASE_URL="http://reviews-service:3001"
 CACHE_URL="http://cache-service:3002"
 EVICTION_STRATEGY="lfu"
+QUERY_CONTEXT="electronics"
 OUTPUT_DIR="packages/tools/k6/results"
 K6_IMAGE="grafana/k6:0.49.0"
 
@@ -32,6 +33,10 @@ while [[ $# -gt 0 ]]; do
       EVICTION_STRATEGY="$2"
       shift 2
       ;;
+    --context)
+      QUERY_CONTEXT="$2"
+      shift 2
+      ;;
     --url)
       BASE_URL="$2"
       shift 2
@@ -44,6 +49,7 @@ while [[ $# -gt 0 ]]; do
       echo "Options:"
       echo "  --script SCRIPT      Test script to run (default: cache-load-test.js)"
       echo "  --strategy STRATEGY  Eviction strategy: lfu|lru|hybrid (default: lfu)"
+      echo "  --context CONTEXT    Query context: electronics|game_soundtracks (default: electronics)"
       echo "  --url URL            Base URL (default: http://reviews-service:3001)"
       echo "  --help               Show this help message"
       echo ""
@@ -51,7 +57,8 @@ while [[ $# -gt 0 ]]; do
       echo "  $0"
       echo "  $0 --script cache-stress-test.js"
       echo "  $0 --strategy lru"
-      echo "  $0 --script strategy-comparison-test.js --strategy hybrid"
+      echo "  $0 --context game_soundtracks"
+      echo "  $0 --script strategy-comparison-test.js --strategy hybrid --context electronics"
       exit 0
       ;;
     *)
@@ -72,6 +79,7 @@ echo -e "${CYAN}${BOLD}Configuration${NC}"
 echo -e "${DIM}────────────────────────────────────────────────────────────${NC}"
 echo -e "  ${BOLD}Script:${NC}    ${YELLOW}${TEST_SCRIPT}${NC}"
 echo -e "  ${BOLD}Strategy:${NC}  ${YELLOW}${EVICTION_STRATEGY}${NC}"
+echo -e "  ${BOLD}Context:${NC}   ${YELLOW}${QUERY_CONTEXT}${NC}"
 echo -e "  ${BOLD}Base URL:${NC}  ${DIM}${BASE_URL}${NC}"
 echo -e "  ${BOLD}Cache URL:${NC} ${DIM}${CACHE_URL}${NC}"
 echo ""
@@ -160,6 +168,7 @@ docker run --rm \
   -e BASE_URL="${BASE_URL}" \
   -e CACHE_URL="${CACHE_URL}" \
   -e EVICTION_STRATEGY="${EVICTION_STRATEGY}" \
+  -e QUERY_CONTEXT="${QUERY_CONTEXT}" \
   -e NODE_ENV="testing" \
   "${K6_IMAGE}" run \
   --summary-trend-stats="min,avg,med,max,p(90),p(95),p(99)" \
