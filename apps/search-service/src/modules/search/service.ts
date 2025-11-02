@@ -20,6 +20,8 @@ export class SearchService {
   ) {}
 
   async search(query: string, page = 1, size = 10) {
+    console.log(`[Search Service] Received search request: q="${query}", page=${page}, size=${size}`);
+
     return this.tracing.startActiveSpan('search.mongodb_query', async (span) => {
       const skip = (page - 1) * size;
 
@@ -33,18 +35,22 @@ export class SearchService {
       });
 
       if (!sanitizedQuery) {
+        console.log(`[Search Service] Query is empty`);
         span.addEvent('query_empty');
         return { items: [], total: 0 };
       }
 
       if (sanitizedQuery.length < 3) {
         // If the query is too short, we can return an empty result set
+        console.log(`[Search Service] Query too short: "${sanitizedQuery}"`);
         span.addEvent('query_too_short');
         return { items: [], total: 0 };
       }
 
+      console.log(`[Search Service] Querying MongoDB with: "${sanitizedQuery}" (skip: ${skip}, limit: ${size})`)
+
       // Use MongoDB Text Search with text index
-      // Searches across reviewText and summary fields (as defined in schema)
+      // Searches across title and description fields (as defined in schema)
       const searchCriteria = {
         $text: { $search: sanitizedQuery }
       };
@@ -61,6 +67,8 @@ export class SearchService {
 
         this.reviewModel.countDocuments(searchCriteria),
       ]);
+
+      console.log(`[Search Service] MongoDB returned ${items.length} items (total: ${total})`);
 
       span.setAttributes({
         [SEARCH_RESULTS_TOTAL]: total,
